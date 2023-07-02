@@ -1,0 +1,433 @@
+.error-indicator {
+    font-size: 30px;
+    color:#900000;
+}
+ul {
+    padding-left: 10px; /* Adjust the value as needed */
+}
+  
+li {
+    margin-left: 10px; /* Adjust the value as needed */
+}
+/*Modifier Input*/
+.modifier-input {
+    display: flex;
+    align-items: flex-start;
+}
+
+.modifier-input input[type="text"]  {
+    padding: 5px;
+    width: 300px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 17px;
+}
+
+.modifier-input button {
+    padding: 5px 10px;
+    margin-left: 10px;
+    height: 40px;
+    border: none;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.modifier-input button:hover {
+    background-color: #0056b3;
+}
+
+.modifier-input datalist {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    z-index: 1;
+}
+
+.modifier-input datalist option {
+    padding: 5px;
+    cursor: pointer;
+}
+
+/*Form Rows*/
+.form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    
+}
+
+.form-row label {
+    width: 120px;
+    text-align: left;
+    margin-right: 10px;
+    font-style:oblique;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-size: 20px;
+}
+
+.form-row input[type="number"] {
+    padding: 5px;
+    border: 2px solid #ccc;
+    border-radius: 7px;
+    font-size: 20px;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+.form-row input[type="text"] {
+    padding: 5px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 20px;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
+.form-row .longer input[type="text"] {
+    width: 200px;
+}
+
+.form-row input[type="number"] {
+    width: 60px;
+}
+
+.form-row input[type="text"] {
+    width: 150px;
+}
+
+.form-row button {
+    width: 60px;
+    padding: 5px 10px;
+    margin-right: 10px;
+    border: none;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.form-row button:hover {
+    background-color: #0056b3;
+}
+
+/*Modifier List*/
+.modifier-list {
+    list-style-type:none;
+    height: 200px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #b1b1b1;
+}
+
+.modifier-list .modListItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.modifier-list .modListItem button {
+    padding: 5px 10px;
+    margin-left: 10px;
+    border: none;
+    background-color: #ff0000;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.modifier-list .modListItem span {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.modListItem button:hover {
+    background-color: #900000;
+}
+
+/*Unit Select List*/
+.unit-select-list {
+    list-style-type: none;
+    display: block;
+    list-style-type:none;
+    list-style-type:none;
+    height: 400px;
+    padding-left: -20px;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: #b1b1b1;
+}
+
+.unit-select-sublist-hidden {
+    display:none;
+    list-style-type:none;
+}
+
+.unit-select-sublist-visible {
+    display:block;
+}
+
+.unit-select-text {
+    font-family: Copperplate, "Copperplate Gothic Light", fantasy;
+    font-size: 16px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 700; 
+}
+
+.unit-select-subset {
+    border: 1px solid black;
+    background-color: #e7e7e7;
+    cursor: pointer;
+    text-align: left;
+}
+
+.unit-select-subset-offcolor {
+    border: 1px solid black;
+    background-color: #d1d1d1;
+    cursor: pointer;
+}
+
+.unit-select-item {
+    border: 1px solid black;
+    background-color: #a5bfcf;
+    cursor: pointer;
+}
+
+.unit-select-item-selected {
+    background-color: #cbeafd;
+}
+
+.unit-select-profile {
+    border: 1px solid black;
+    background-color: #c0cfa5;
+    cursor: pointer;
+}
+
+.unit-select-profile-selected {
+    background-color: #f0fdcb;
+}
+
+/*Unit Select Buttons*/
+.unit-select-btns-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.unit-select-btns-container button {
+    padding: 5px 10px;
+    margin-left: 10px;
+    height: 40px;
+    width: 175px;
+    border: none;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.unit-select-btns-container button:hover {
+    background-color: #0056b3;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+}
+
+.sub-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 800px;
+}
+
+.sub-container-2 {
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(202, 202, 202);
+    border: solid;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 400px;
+    max-width: 400px;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+/*Stat containers*/
+.stats-container {
+    background-color: rgb(202, 202, 202);
+    display: flex;
+    flex-direction: row;
+    border: solid;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 800px;
+    max-width: 800px;
+    min-height: 400px;
+    margin-bottom: 10px;
+}
+
+.stat-block {
+    min-width: 320px;
+}
+
+.modifier-block {
+    margin-left: 40px;
+}
+
+.attacker-stats {
+    border-color: red;
+}
+
+.defender-stats {
+    border-color: blue; 
+}
+
+.stats-header-profile {
+    font-family: Copperplate, "Copperplate Gothic Light", fantasy;
+    font-size: 18px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 700; 
+    margin-bottom: 10px;
+    margin-top: 0;
+}
+
+.stats-header-unit {
+    font-family: Copperplate, "Copperplate Gothic Light", fantasy;
+    font-size: 24px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 700; 
+    margin-bottom: 10px;
+    margin-top: 0;
+}
+
+/*Calculate Area*/
+.calculate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: -10px;
+}
+
+.calculate-btns {
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+}
+
+.calculate-btns button{
+    margin-top: 10px;
+    margin-right: 5px;
+    margin-left: 5px;
+    margin-bottom: 10px;
+    border: none;
+    align-self: center;
+    height: 75px;
+    width: 195px;
+    font-size: 20px;
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+}
+
+.calc button {
+    background-color: #00ff00;
+    color: black;
+}
+.clear button {
+    background-color: #6f9aa4;
+}
+
+.calc button:hover {
+    background-color: #00ae20;
+}
+.clear button:hover {
+    background-color: #5c7f87;
+}
+
+.calculate textarea {
+    border-radius: 5px;
+    resize: none;
+    align-self: center;
+    width: 400px;
+    height: 745px;
+}
+
+/* Output Table */
+.container-2 {
+    display: flex;
+    padding: 10px;
+    flex-direction: row;
+}
+.output-table-container {
+    display: flex;
+    border: 3px solid black;
+    background-color: lightgray;
+    align-items:baseline;
+    border-radius: 10px;
+    width: 1255px;
+    height: 1000px;
+}
+
+.output-table-header {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+}
+
+.output-table-header.x {
+    flex-direction: column;
+    max-height: 50px;
+    text-align: center;
+}
+
+.output-table-header.y {
+    margin-left: 8px;
+    max-width:100px;
+    word-wrap: break-word;
+    margin-top: 100px;
+    align-self: self-start;
+    text-align: center;
+}
+
+.output-table {
+    overflow: auto;
+    border: 3px solid black;
+    background-color: wheat;
+    width: 1060px;
+    height: 900px;
+    flex: 1 1 auto;
+    margin-left: 20px; /* Adjust as needed */
+}
+.output-table table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.output-table th {
+    height: 50px;
+    width: 50px;
+}
+.output-table td {
+    width: 100px;
+    height: 100px;
+    padding: 5px;
+    border: 1px solid black;
+    background-color: white;
+}

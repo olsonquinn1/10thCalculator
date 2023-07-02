@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>10th Edition Calculator</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sub-container-2">
+            <div class="unit-select-list">
+                <ul id="list-units" class="unit-select-list"></ul>
+            </div>
+            <div class ="unit-select-btns-container">
+                <button onclick="loadSelectedToAttacker()">Load as Attacker</button>
+                <button onclick="loadSelectedToDefender()">Load as Defender</button>
+            </div>
+        </div>
+        <div class="sub-container">
+            <div class="stats-container attacker-stats">
+                <div class="stat-block">
+                    <h1 id="header-attacker-name" class="stats-header-unit">Attacking Unit</h1>
+                    <h2 id="header-attacker-profile" class="stats-header-profile">Attacking Profile</h2>
+                    <div class="form-row">
+                        <label for="count">Count:</label>
+                        <input type="number" id="count" name="count" value="1"><br><br>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="skill">Skill:</label>
+                        <input type="number" id="skill" name="skill" value="4" min="2" max="7"><br><br>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="strength">Strength:</label>
+                        <input type="number" id="strength" name="strength" value="4"><br><br>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="ap">AP:</label>
+                        <input type="number" id="ap" name="ap" min="0" value="0"><br><br>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="attacks">Attacks:</label>
+                        <input type="text" id="attacks" name="attacks" value=1 oninput="getValue(this.id)">
+                        <span id="attacks-error" class="error-indicator"></span><br><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="damage">Damage:</label>
+                        <input type="text" id="damage" name="damage" value=1 oninput="getValue(this.id)">
+                        <span id="damage-error" class="error-indicator"></span><br><br>
+                    </div>
+                    <div class="form-row">
+                        <button type="button">Add to Group</button>
+                        <input class="longer" type="text" id="atk-group-input" placeholder="Tag"><br><br>
+                    </div>
+                </div>
+                <div class="modifier-block">
+                    <div>
+                        <label for="modifier-attacker">Modifier:</label>
+                    </div>
+                    <div class="modifier-input">
+                        <input type="text" id="modifier-attacker" name="modifier-attacker" list="options-modifier-attacker">
+                        <button type="button" onclick="addModifier('modifier-attacker', document.getElementById('modifier-attacker').value)">Add Modifier</button>
+                        <datalist id="options-modifier-attacker"></datalist>
+                    </div>
+                    <h2>Modifiers:</h2>
+                    <ul id="list-modifier-attacker" class="modifier-list"></ul>
+                </div>
+            </div>
+            <div class="stats-container defender-stats">
+                <div class="stat-block">
+                    <h1 id="header-defender-name" class="stats-header-unit">Defending Unit</h1>
+
+                    <div class="form-row">
+                        <label for="toughness">Toughness:</label>
+                        <input type="number" id="toughness" name="toughness" value="4">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="wounds">Wounds:</label>
+                        <input type="number" id="wounds" name="wounds" value="2">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="save">Save:</label>
+                        <input type="number" id="save" name="save" min="2" max="7" value="4">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="models">Models:</label>
+                        <input type="number" id="models" name="models" value="1">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="invuln">Invulnerable Save:</label>
+                        <input type="number" id="invuln" name="invuln" value="7" min="2" max="7">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="feel-no-pain">Feel No Pain:</label>
+                        <input type="number" id="feel-no-pain" name="feel-no-pain" value="7" min="2" max="7">
+                    </div>
+                    <div class="form-row">
+                        <label style = "height: 27px;"></label>
+                    </div>
+                    
+                </div>
+                <div class="modifier-block">
+                    <div>
+                        <label for="modifier-defender-input">Modifier:</label>
+                    </div>
+                    <div class="modifier-input">
+                        <input type="text" id="modifier-defender" name="modifier-defender" list="options-modifier-defender">
+                        <button type="button" onclick="addModifier('modifier-defender', document.getElementById('modifier-defender').value)">Add Modifier</button>
+                        <datalist id="options-modifier-defender"></datalist>
+                    </div>
+        
+                    <h2>Modifiers:</h2>
+                    <ul id="list-modifier-defender" class="modifier-list"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="sub-container-2">
+            <div class="calculate">
+                <div class ="calculate-btns">
+                    <div class="calc">
+                        <button  id="calculate-btn" onclick="calculate()">Calculate</button>
+                    </div>
+                    <div class="clear">
+                        <button id="clear-btn" onclick="clearOutput()">Clear</button>
+                    </div>
+                </div>
+                <textarea id="output" readonly></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="container-2">
+        <div class="sub-container-2">
+            <div>
+                <h2>Attacking Profiles</h2>
+                <ul id="list-test-atk" class="modifier-list"></ul>
+            </div>
+            <div>
+                <h2>Defending Profiles</h2>
+                <ul id="list-test-def" class="modifier-list"></ul>
+            </div>
+        </div>
+        <div class="output-table-container">
+            <div class="output-table-header y">
+                <h2>Attacking Profiles</h2>
+            </div>
+            <div>
+                <div class="output-table-header x">
+                    <h2 >Defensive Profiles</h2>
+                </div>
+                <div class="output-table">
+                    <table id="output-table">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>
