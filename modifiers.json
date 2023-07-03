@@ -26,7 +26,7 @@
         "type": "hit",
         "var": false,
         "priority": -1,
-        "formula": "bsMod+=1"
+        "formula": "hitMod+=1"
     },
     {
         "name": "+1 to Wound",
@@ -40,49 +40,49 @@
         "type": "hitrr",
         "var": false,
         "priority": 5,
-        "formula": "hit+=thresh(bs) / 6"
+        "formula": "hitrrMod = 6"
     },
     {
         "name": "Reroll 1's to Wound",
         "type": "woundrr",
         "var": false,
         "priority": 5,
-        "formula": "wound+=thresh(wdVal) / 6"
+        "formula": "wdrrMod = 6"
     },
     {
         "name": "Reroll Hits",
         "type": "hitrr",
         "var": false,
         "priority": 7,
-        "formula": "hit+=thresh(bs)*(1-thresh(bs))"
+        "formula": "hitrrMod = 1"
     },
     {
         "name": "Reroll Wounds",
         "type": "woundrr",
         "var": false,
         "priority": 7,
-        "formula": "wound+=thresh(wdVal)*(1-thresh(wdVal))"
+        "formula": "wdrrMod = 1"
     },
     {
         "name": "Reroll 1 Hit Roll",
         "type": "hitrr",
         "var": false,
         "priority": 6,
-        "formula": "hit += thresh(bs) * (1-thresh(bs)) / atk_avg"
+        "formula": "hitrrMod = atk_avg"
     },
     {
         "name": "Reroll 1 Wound Roll",
         "type": "woundrr",
         "var": false,
         "priority": 6,
-        "formula": "wound += thresh(wdVal) * (1-thresh(wdVal)) / atk_avg"
+        "formula": "wdrrMod = atk_avg"
     },
     {
         "name": "Torrent",
         "type": "hit",
         "var": false,
         "priority": 10,
-        "formula": "hit = 1"
+        "formula": "autoHit = true"
     },
     {
         "name": "Lethal Hits",
@@ -167,7 +167,7 @@
         "type": "tag",
         "var": false,
         "priority": -1,
-        "formula": "{if(!attackerTags.includes('Ignores Cover') && !(sv <= 3 && ap == 0)) "
+        "formula": "{if(!attackerTags.includes('Ignores Cover') && !(sv <= 3 && ap == 0)) svMod += 1"
     },
     {
         "name": "Fly",

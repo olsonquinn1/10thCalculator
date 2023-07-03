@@ -234,6 +234,7 @@ function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
     var pyrr = py / rrMod;
     var newProbs = [px, py];
     if(fishForCrit) {
+        //px = rr succ x * failed prob of y - rr fail x * rerolls unecessary for x succ
         newProbs[0] += pxrr * (1 - py) - (1 - pxrr) * (px - py);
         newProbs[1] += pyrr * (1 - py);
     } else {
@@ -247,13 +248,14 @@ function calculate() {
     var atkModifiers = getModifiers("attacker");
     var defModifiers = getModifiers("defender");
 
-    var attackerTags = [];
-    var defenderTags = [];
-
-    //collect modifiers
+    //---------------------------------base variables
+    //modifiers
     var modList = [];
     modList = atkModifiers.concat(defModifiers);
     modList.sort((a,b) => a.priority - b.priority);
+
+    var modListLow = [];
+    var modListHigh = [];
 
     for(var mod of modList) {
         if(mod.var) while(mod.formula.includes("$var")) {
@@ -264,6 +266,8 @@ function calculate() {
                 eval(formula);
             };
         })(mod.formula);
+        if(mod.priority < 0) modListLow.add(mod);
+        else modListHigh.add(mod);
     }
 
     //attacker stats
@@ -304,97 +308,95 @@ function calculate() {
     var wdValMod = 0;
     var svMod = 0;
 
-    //critical thresholds
+    //--------------------modifier variables
+
+    var attackerTags = [];
+    var defenderTags = [];
+
     var critWoundThresh = 6;
     var critHitThresh = 6;
 
-    var prioTrack = 0;
-    var modTrack = 0;
-    var modsLeft = false;
-    if(modList.length > 0) {
-        prioTrack = modList[modTrack].priority;
-        modsLeft = true;
-    }
+    var hitMod = 0;
+    var wdMod = 0;
+    var svMod = 0;
 
-    //run modifier functions prio < 0
-    //modifiers that affect stats that influence the base roll thresholds
-    while(prioTrack < 0 && modsLeft) {
-        var func = modList[modTrack].formula;
+    var hitrrMod = 1;
+    var wdrrMod = 1;
+
+    var autoHit = false;
+
+    var damageMod = 0;
+    var damageModScale = 1;
+
+    var fishForCritHits = false;
+    var fishForCritWounds = false;
+
+    //run low prio modifiers (<0)
+    modListA.forEach(mod => {
+        var func = mod.formula;
         func();
-        modTrack++;
-        if(modTrack >= modList.length) {
-            modsLeft = false;
-            break;
-        }
-        prioTrack = modList[modTrack].priority;
-    }
+    });
 
     //determine hit threshold, wound threshold, and save threshold
     var wdVal = 4;
+    var bsVal = bs;
+    var svVal = sv;
+
+    //wound threshold
     if(tgh > str) {
         wdVal++;
         if(tgh >= str * 2)
             wdVal++;
-        
     } else if(tgh < str) {
         wdVal--;
         if(tgh * 2 <= str)
             wdVal--;
     }
-    if(wdValMod > 1) wdValMod = 1;
-    if(wdValMod < -1) wdValMod = -1;
-    wdVal -= wdValMod;
+    if(wdMod > 1) wdMod = 1;
+    if(wdMod < -1) wdMod = -1;
+    wdVal -= wdMod;
     if(wdVal > critWoundThresh) wdVal = critWoundThresh;
-
-    if(bsMod > 1) bsMod = 1;
-    if(bsMod < -1) bsMod = -1;
-    bs -= bsMod;
-
-    if(svMod > 1) svMod = 1;
-    if(svMod < -1) svMod = -1;
-
-    if(bs < 2) bs = 2;
-    if(sv < 2) sv = 2;
     if(wdVal < 2) wdVal = 2;
     if(wdVal > 6) wdVal = 6;
 
-    var svVal = sv + ap - svMod;
+    //hit threshold
+    if(hitMod > 1) hitMod = 1;
+    if(hitMod < -1) hitMod = -1;
+    bsVal -= hitMod;
+    if(bsVal < 2) bsVal = 2;
+    if(bsVal > 6) bsVal = 6;
+
+    //save threshold
+    if(svMod > 1) svMod = 1;
+    if(svMod < -1) svMod = -1;
+    svVal += ap - svMod;
     if(svVal > 7) svVal = 7;
+    if(svVal < 2) svVal = 2;
+
     if(inv > 0 && inv < 7) svVal = (svVal > inv ? inv : svVal);
 
-    //only reroll rolls when they are less than this
-    var rrHitThresh = 0;
-    var rrHitCount = count;
-    var rrWdThresh = 0;
-    var rrWdCount = count;
-
-    //roll probability modifiers
-    var hitRollMod = 0;
-    var woundRollMod = 0;
-    var svRollMod = 0;
-
-    var damageMod = 0;
-    var damageModScale = 1;
-
-    //base probabilities
-    var hit = thresh(bs);
-    var wound = thresh(wdVal);
+    //determine probabilities
+    var hitResult = calculateReroll(bsVal, critHitThresh, hitrrMod, fishForCritHits);
+    var hit = 0;
+    var critHit = 0;
+    if(autoHit) {
+        hit = 1;
+    } else {
+        hit = hitResult[0];
+        critHit = hitResult[1];
+    }
+    var wdResult = calculateReroll(wdVal, critWoundThresh, wdrrMod, fishForCritWounds);
+    var wound = wdResult[0];
+    var critWd = wdResult[1];
     var save = 1.0 - thresh(svVal);
-    var mortalWounds = 0;
-
+    
     var woundOffset = 0;
 
-    //run modifier functions prio >= 0
-    //modifiers that add/sub to the roll thresholds
-    while(modsLeft) {
-        var func = modList[modTrack].formula;
+    //run high prio modifiers
+    modListB.forEach(mod => {
+        var func = mod.formula;
         func();
-        modTrack++;
-        if(modTrack >= modList.length) {
-            modsLeft = false;
-            break;
-        }
-    }
+    });
 
     if(!simulated) {
 
