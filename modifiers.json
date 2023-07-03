@@ -5,7 +5,7 @@
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "attackerTags.push('Psychic')"
+        "formula": "modVar.attackerTags.push('Psychic')"
     },
     {
         "name": "Blast",
@@ -19,14 +19,14 @@
         "type": "tag",
         "var": false,
         "priority": -11,
-        "formula": "attackerTags.push('Ignores Cover')"
+        "formula": "modVar.attackerTags.push('Ignores Cover')"
     },
     {
         "name": "+1 to Hit",
         "type": "hit",
         "var": false,
         "priority": -1,
-        "formula": "hitMod+=1"
+        "formula": "modVar.hitMod+=1"
     },
     {
         "name": "+1 to Wound",
@@ -40,49 +40,49 @@
         "type": "hitrr",
         "var": false,
         "priority": 5,
-        "formula": "hitrrMod = 6"
+        "formula": "modVar.hitrrMod = 6"
     },
     {
         "name": "Reroll 1's to Wound",
         "type": "woundrr",
         "var": false,
         "priority": 5,
-        "formula": "wdrrMod = 6"
+        "formula": "modVar.wdrrMod = 6"
     },
     {
         "name": "Reroll Hits",
         "type": "hitrr",
         "var": false,
         "priority": 7,
-        "formula": "hitrrMod = 1"
+        "formula": "modVar.hitrrMod = 1"
     },
     {
         "name": "Reroll Wounds",
         "type": "woundrr",
         "var": false,
         "priority": 7,
-        "formula": "wdrrMod = 1"
+        "formula": "modVar.wdrrMod = 1"
     },
     {
         "name": "Reroll 1 Hit Roll",
         "type": "hitrr",
         "var": false,
         "priority": 6,
-        "formula": "hitrrMod = atk_avg"
+        "formula": "modVar.hitrrMod = atk_avg"
     },
     {
         "name": "Reroll 1 Wound Roll",
         "type": "woundrr",
         "var": false,
         "priority": 6,
-        "formula": "wdrrMod = atk_avg"
+        "formula": "modVar.wdrrMod = atk_avg"
     },
     {
         "name": "Torrent",
         "type": "hit",
         "var": false,
         "priority": -1,
-        "formula": "autoHit = true"
+        "formula": "modVar.autoHit = true"
     },
     {
         "name": "Lethal Hits",
@@ -104,7 +104,7 @@
         "type": "modifier",
         "var": false,
         "priority": 15,
-        "formula": "{var w = thresh(critWoundThresh);wound = Math.max(0, wound - w);mortalWounds += hit * w;}"
+        "formula": "{var w = thresh(modVar.critWoundThresh);wound = Math.max(0, wound - w);mortalWounds += hit * w;}"
     },
     {
         "name": "Anti-Infantry",
@@ -112,7 +112,7 @@
         "var": true,
         "value": null,
         "priority": -5,
-        "formula": "if(defenderTags.includes('Infantry') && critWoundThresh > $var ) critWoundThresh = $var"
+        "formula": "if(modVar.defenderTags.includes('Infantry') && modVar.critWoundThresh > $var ) modVar.critWoundThresh = $var"
     },
     {
         "name": "Anti-Vehicle",
@@ -120,7 +120,7 @@
         "var": true,
         "value": null,
         "priority": -5,
-        "formula": "if(defenderTags.includes('Vehicle') && critWoundThresh > $var ) critWoundThresh = $var"
+        "formula": "if(modVar.defenderTags.includes('Vehicle') && modVar.critWoundThresh > $var ) modVar.critWoundThresh = $var"
     },
     {
         "name": "Anti-Monster",
@@ -128,7 +128,7 @@
         "var": true,
         "value": null,
         "priority": -5,
-        "formula": "if(defenderTags.includes('Monster') && critWoundThresh > $var ) critWoundThresh = $var"
+        "formula": "if(modVar.defenderTags.includes('Monster') && modVar.critWoundThresh > $var ) modVar.critWoundThresh = $var"
     },
     {
         "name": "Anti-Psyker",
@@ -136,7 +136,7 @@
         "var": true,
         "value": null,
         "priority": -5,
-        "formula": "if(defenderTags.includes('Psyker') && critWoundThresh > $var ) critWoundThresh = $var"
+        "formula": "if(modVar.defenderTags.includes('Psyker') && modVar.critWoundThresh > $var ) modVar.critWoundThresh = $var"
     },
     {
         "name": "Increase AP on Critical Wound",
@@ -144,7 +144,7 @@
         "var": true,
         "value": null,
         "priority": 16,
-        "formula": "if(mortalWounds > 0) svRollMod -=  $var * thresh(critWoundThresh)"
+        "formula": "if(mortalWounds > 0) svRollMod -=  $var * thresh(modVar.critWoundThresh)"
     },
     {
         "name": "Disable Armor Saves",
@@ -160,77 +160,77 @@
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Infantry')"
+        "formula": "modVar.defenderTags.push('Infantry')"
     },
     {
         "name": "Cover",
         "type": "tag",
         "var": false,
         "priority": -1,
-        "formula": "{if(!attackerTags.includes('Ignores Cover') && !(sv <= 3 && ap == 0)) svMod += 1"
+        "formula": "{if(!modVar.attackerTags.includes('Ignores Cover') && !(sv <= 3 && ap == 0)) modVar.svMod += 1"
     },
     {
         "name": "Fly",
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Fly')"
+        "formula": "modVar.defenderTags.push('Fly')"
     },
     {
         "name": "Vehicle",
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Vehicle')"
+        "formula": "modVar.defenderTags.push('Vehicle')"
     },
     {
         "name": "Psyker",
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Psyker')"
+        "formula": "modVar.defenderTags.push('Psyker')"
     },
     {
         "name": "Monster",
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Monster')"
+        "formula": "modVar.defenderTags.push('Monster')"
     },
     {
         "name": "Chaos",
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Chaos')"
+        "formula": "modVar.defenderTags.push('Chaos')"
     },
     {
         "name": "Daemon",
         "type": "tag",
         "var": false,
         "priority": -10,
-        "formula": "defenderTags.push('Daemon')"
+        "formula": "modVar.defenderTags.push('Daemon')"
     },
     {
         "name": "+1 to Save",
         "type": "svMod",
         "var": false,
         "priority": -10,
-        "formula": "svMod += 1"
+        "formula": "modVar.svMod += 1"
     },
     {
         "name": "-1 Damage",
         "type": "damageModifier",
         "var": false,
         "priority": 0,
-        "formula": "damageMod-=1"
+        "formula": "modVar.damageMod-=1"
     },
     {
         "name": "Half Damage",
         "type": "damageModifier",
         "var": false,
         "priority": 0,
-        "formula": "damageModScale=0.5"
+        "formula": "modVar.damageModScale=0.5"
     },
     {
         "name": "-1 to Hit",
@@ -274,7 +274,7 @@
         "var": true,
         "value": null,
         "priority": 20,
-        "formula": "{if(attackerTags.includes('Psychic')){if($var < mortalFnp) mortalFnp=$var; if($var < fnp) fnp=$var}}"
+        "formula": "{if(modVar.attackerTags.includes('Psychic')){if($var < mortalFnp) mortalFnp=$var; if($var < fnp) fnp=$var}}"
     }]
     }
 ]
