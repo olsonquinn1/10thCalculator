@@ -679,3 +679,29 @@ function init() {
     generateEmptyTable();
 }
 window.addEventListener('DOMContentLoaded', init);
+function modVars () {
+    return {
+        "attackerTags" : [],
+        "defenderTags" : [],
+
+        "critWoundThresh" : 6,
+        "critHitThresh" : 6,
+
+        "hitMod" : 0,
+        "wdMod" : 0,
+        "svMod" : 0,
+
+        "hitrrMod" : 1,
+        "wdrrMod" : 1,
+
+        "autoHit" : false,
+
+        "damageMod" : 0,
+        "damageModScale" : 1,
+
+        "fishForCritHits" : false,
+        "fishForCritWounds" : false,
+    }
+}
+
+function 
