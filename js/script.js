@@ -332,7 +332,7 @@ function calculate() {
     var fishForCritWounds = false;
 
     //run low prio modifiers (<0)
-    modListA.forEach(mod => {
+    modListLow.forEach(mod => {
         var func = mod.formula;
         func();
     });
@@ -388,12 +388,13 @@ function calculate() {
     var wdResult = calculateReroll(wdVal, critWoundThresh, wdrrMod, fishForCritWounds);
     var wound = wdResult[0];
     var critWd = wdResult[1];
+    
     var save = 1.0 - thresh(svVal);
     
     var woundOffset = 0;
 
     //run high prio modifiers
-    modListB.forEach(mod => {
+    modListHigh.forEach(mod => {
         var func = mod.formula;
         func();
     });
