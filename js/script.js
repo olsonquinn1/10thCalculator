@@ -272,7 +272,7 @@ function calculate() {
 
     //attacker stats
     var count = parseInt(document.getElementById("count").value);
-    let bs = parseInt(document.getElementById("skill").value)
+    var bs = parseInt(document.getElementById("skill").value)
     var str = parseInt(document.getElementById("strength").value)
     var ap = parseInt(document.getElementById("ap").value)
     
@@ -304,9 +304,6 @@ function calculate() {
     var inv = parseInt(document.getElementById("invuln").value);
     var fnp = parseInt(document.getElementById("feel-no-pain").value);
     var mortalFnp = fnp;
-    var bsMod = 0;
-    var wdValMod = 0;
-    var svMod = 0;
 
     //--------------------modifier variables
 
@@ -414,7 +411,7 @@ function calculate() {
         var overkillRatio = wd / (dmg_avg * atksPerModelDeath);
 
         //base chance of an attack doing damage
-        var passProb = ((hit * wound) + woundOffset) * save;
+        var passProb = (((hit + critHit) * (wound + critWd)) + woundOffset) * save;
         var totalMod = (1 - thresh(fnp)) * moddedDmg * count * atk_avg;
 
         var preOK =  totalMod * passProb;
@@ -679,7 +676,7 @@ function init() {
     generateEmptyTable();
 }
 window.addEventListener('DOMContentLoaded', init);
-function modVars () {
+function modVars() {
     return {
         "attackerTags" : [],
         "defenderTags" : [],
@@ -703,5 +700,3 @@ function modVars () {
         "fishForCritWounds" : false,
     }
 }
-
-function 

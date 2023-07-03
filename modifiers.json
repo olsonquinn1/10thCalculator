@@ -81,7 +81,7 @@
         "name": "Torrent",
         "type": "hit",
         "var": false,
-        "priority": 10,
+        "priority": -1,
         "formula": "autoHit = true"
     },
     {
@@ -89,7 +89,7 @@
         "type": "modifier",
         "var": false,
         "priority": 5,
-        "formula": "{hit -= thresh(critHitThresh);woundOffset += thresh(critHitThresh);}"
+        "formula": "woundOffset += critWd; hit -= critWd"
     },
     {
         "name": "Sustained Hits",
@@ -97,7 +97,7 @@
         "var": true,
         "value": null,
         "priority": 5,
-        "formula": "hit += $var * thresh(critHitThresh)"
+        "formula": "hit += $var * critHit"
     },
     {
         "name": "Devastating Wounds",
