@@ -307,6 +307,7 @@ function calculate() {
 
     //--------------------modifier variables
 
+    var modVar = modVars();
     var attackerTags = [];
     var defenderTags = [];
 
@@ -349,40 +350,40 @@ function calculate() {
         if(tgh * 2 <= str)
             wdVal--;
     }
-    if(wdMod > 1) wdMod = 1;
-    if(wdMod < -1) wdMod = -1;
-    wdVal -= wdMod;
-    if(wdVal > critWoundThresh) wdVal = critWoundThresh;
+    if(modVar.wdMod > 1) modVar.wdMod = 1;
+    if(modVar.wdMod < -1) modVar.wdMod = -1;
+    wdVal -= modVar.wdMod;
+    if(wdVal > modVar.critWoundThresh) wdVal = modVar.critWoundThresh;
     if(wdVal < 2) wdVal = 2;
     if(wdVal > 6) wdVal = 6;
 
     //hit threshold
-    if(hitMod > 1) hitMod = 1;
-    if(hitMod < -1) hitMod = -1;
-    bsVal -= hitMod;
+    if(modVar.hitMod > 1) modVar.hitMod = 1;
+    if(modVar.hitMod < -1) modVar.hitMod = -1;
+    bsVal -= modVar.hitMod;
     if(bsVal < 2) bsVal = 2;
     if(bsVal > 6) bsVal = 6;
 
     //save threshold
-    if(svMod > 1) svMod = 1;
-    if(svMod < -1) svMod = -1;
-    svVal += ap - svMod;
+    if(modVar.svMod > 1) modVar.svMod = 1;
+    if(modVar.svMod < -1) modVar.svMod = -1;
+    svVal += ap - modVar.svMod;
     if(svVal > 7) svVal = 7;
     if(svVal < 2) svVal = 2;
 
     if(inv > 0 && inv < 7) svVal = (svVal > inv ? inv : svVal);
 
     //determine probabilities
-    var hitResult = calculateReroll(bsVal, critHitThresh, hitrrMod, fishForCritHits);
+    var hitResult = calculateReroll(bsVal, modVar.critHitThresh, modVar.hitrrMod, modVar.fishForCritHits);
     var hit = 0;
     var critHit = 0;
-    if(autoHit) {
+    if(modVar.autoHit) {
         hit = 1;
     } else {
         hit = hitResult[0];
         critHit = hitResult[1];
     }
-    var wdResult = calculateReroll(wdVal, critWoundThresh, wdrrMod, fishForCritWounds);
+    var wdResult = calculateReroll(wdVal, modVar.critWoundThresh, modVar.wdrrMod, modVar.fishForCritWounds);
     var wound = wdResult[0];
     var critWd = wdResult[1];
     
@@ -398,7 +399,7 @@ function calculate() {
 
     if(!simulated) {
 
-        var moddedDmg = dmg_avg * damageModScale + damageMod;
+        var moddedDmg = dmg_avg * modVar.damageModScale + modVar.damageMod;
         if(moddedDmg < 1) moddedDmg = 1;
 
         var atksPerModelDeath = 0;
