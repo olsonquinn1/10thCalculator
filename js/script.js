@@ -3,6 +3,15 @@ var defModifierData;
 var selectedUnit;
 var selectedProfile;
 var unitData;
+var tableData;
+
+var outputOptions = {
+    "dmglabel": true,
+    "dmg": true,
+    "models": true,
+    "breakdown": true,
+    "simulated": false
+}
 
 function clearOutput() {
     var outputField = document.getElementById("output");
@@ -35,12 +44,12 @@ function generateEmptyTable() {
     var rows = 8;
     var inner = "<tr><th></th>";
     for(var i = 1; i <= columns; i++) {
-        inner += "<th>Defender " + i + "</th>"
+        inner += "<th class='column-name'>Defender " + i + "</th>"
     }
     inner += "</tr>";
     
     for(var i = 1; i < rows; i++) {
-        inner += "<tr><th>Attacker " + i + "</th>"
+        inner += "<tr><th class='row-name'>Attacker " + i + "</th>"
         for(var j = 1; j <= columns; j++) {
             inner += "<td></td>";
         }
@@ -50,14 +59,114 @@ function generateEmptyTable() {
 
     table.innerHTML = inner;
 }
-function addModifier(type, modifier) {
-    console.log(modifier);
+function getAttacker() {
+    var obj = {}
+
+    obj.mods = getModifiers("attacker")
+
+    var nameField = document.getElementById("header-attacker-profile");
+    obj.name = nameField.textContent
+
+    obj.count = parseInt(document.getElementById("count").value);
+    obj.bs = parseInt(document.getElementById("skill").value)
+    obj.str = parseInt(document.getElementById("strength").value)
+    obj.ap = parseInt(document.getElementById("ap").value)
+    
+    //attacks
+    obj.atk = {}
+    var atk_vals = document.getElementById("attacks").dataset.values;
+    atk_vals = JSON.parse(atk_vals);
+    atk_vals.forEach(i => parseInt(i));
+    obj.atk.diceSides = atk_vals[1];
+    obj.atk.diceMulti = atk_vals[0];
+    obj.atk.value = atk_vals[2];
+    obj.atk.avg = atk_vals[3];
+    obj.atk.isVariable = atk_vals[1] == 0 ? true : false;
+    
+    //damage
+    obj.dmg = {}
+    var dmg_vals = document.getElementById("damage").dataset.values;
+    dmg_vals = JSON.parse(dmg_vals);
+    dmg_vals.forEach(i => parseInt(i));
+    obj.dmg.diceSides = dmg_vals[0];
+    obj.dmg.diceMulti = dmg_vals[1];
+    obj.dmg.value  = dmg_vals[2];
+    obj.dmg.avg = dmg_vals[3];
+    obj.dmg.isVariable = dmg_vals[1] == 0 ? true : false;
+
+    return obj
+}
+function getDefender() {
+    var obj = {}
+
+    obj.mods = getModifiers("defender")
+
+    //target stats
+    var nameField = document.getElementById("header-defender-name");
+    obj.name = nameField.textContent
+    obj.tgh = parseInt(document.getElementById("toughness").value);
+    obj.wd = parseInt(document.getElementById("wounds").value);
+    obj.sv = parseInt(document.getElementById("save").value);
+    obj.models = parseInt(document.getElementById("models").value);
+    obj.inv = parseInt(document.getElementById("invuln").value);
+    obj.fnp = parseInt(document.getElementById("feel-no-pain").value);
+    obj.mortalFnp = obj.fnp;
+
+    return obj
+}
+function addAttackerToTable() {
+
+    var profile = getAttacker()
+
+    var attackerList = document.getElementById('list-test-atk');
+    var listItem = document.createElement('li');
+    listItem.className = "modListItem"
+
+    var textSpan = document.createElement('span');
+    var tagElement = document.getElementById('atk-group-input')
+    var tagName = tagElement.value;
+    if(tagName == "") tagName = profile.name
+    textSpan.textContent = tagName;
+    profile.tag = tagName
+    listItem.appendChild(textSpan);
+
+    var button = document.createElement("button");
+    button.textContent = "Remove";
+    button.onclick = function() {removeListItem(button)};
+    listItem.appendChild(button);
+
+    listItem.setAttribute("data-value", JSON.stringify(profile))
+
+    attackerList.appendChild(listItem);
+}
+function addDefenderToTable() {
+    var profile = getDefender()
+
+    var defenderList = document.getElementById('list-test-def');
+    var listItem = document.createElement('li');
+    listItem.className = "modListItem"
+
+    var textSpan = document.createElement('span');
+    var tagElement = document.getElementById('def-group-input')
+    var tagName = tagElement.value;
+    if(tagName == "") tagName = profile.name
+    textSpan.textContent = tagName;
+    profile.tag = tagName
+    listItem.appendChild(textSpan);
+
+    var button = document.createElement("button");
+    button.textContent = "Remove";
+    button.onclick = function() {removeListItem(button)};
+    listItem.appendChild(button);
+
+    listItem.setAttribute("data-value", JSON.stringify(profile))
+
+    defenderList.appendChild(listItem);
+}
+function parseModifier(type, modifier) {
     var modifierData;
     if(type == "modifier-attacker") modifierData = atkModifierData;
     else if(type == "modifier-defender") modifierData = defModifierData;
-
-    if(modifier.length == 0) return;
-
     var selectedModifier;
     var modVariable;
     for(var i = modifier.length; i > 0; i--) {
@@ -101,8 +210,14 @@ function addModifier(type, modifier) {
     }
     if(selectedModifier == null) {
         alert("No modifier matches \"" + modifier + "\"");
-        return;
+        return false;
     }
+    return selectedModifier
+}
+function addModifier(type, modifier) {
+    if(modifier.length == 0) return;
+
+    selectedModifier = parseModifier(type, modifier);
 
     var modifierList = document.getElementById('list-' + type);
     var listItem = document.createElement('li');
@@ -225,13 +340,18 @@ function roll(probability) {
     return false;
 }
 function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
+    //reroll none: rrMod = 0;
     //reroll all: rrMod = 1;
     //reroll 1's: rrMod = 6;
     //reroll 1:   rrMod = attacks
     var px = thresh(normThresh);
     var py = thresh(critThresh);
-    var pxrr = px / rrMod;
-    var pyrr = py / rrMod;
+    if(rrMod == 0) {
+        return [Math.max(px - py, 0), py];
+    } else {
+        var pxrr = px / rrMod;
+        var pyrr = py / rrMod;
+    }
     var newProbs = [px, py];
     if(fishForCrit) {
         //px = rr succ x * failed prob of y - rr fail x * rerolls unecessary for x succ
@@ -241,17 +361,58 @@ function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
         newProbs[0] += pxrr * (1 - px);
         newProbs[1] += pyrr * (1 - px);
     }
+    return [newProbs[0] - newProbs[1], newProbs[1]];
 }
-function calculate() {
-    var simulated = false;
-    var outputField = document.getElementById("output");
-    var atkModifiers = getModifiers("attacker");
-    var defModifiers = getModifiers("defender");
+function tableCalculate() {
+    var atkListElement = document.getElementById('list-test-atk')
+    var atkListItems = atkListElement.getElementsByTagName('li')
+    var atkList = Array.from(atkListItems)
+    atkList = atkList.map(item => JSON.parse(item.dataset.value))
 
-    //---------------------------------base variables
+    var defListElement = document.getElementById('list-test-def')
+    var defListItems = defListElement.getElementsByTagName('li')
+    var defList = Array.from(defListItems)
+    defList = defList.map(item => JSON.parse(item.dataset.value))
+
+    var table = document.getElementById("output-table");
+    var columns = defList.length;
+    var rows = atkList.length;
+    var inner = "<tr><th></th>";
+    for(var i = 0; i < columns; i++) {
+        inner += "<th class='column-name'>" + defList[i].tag + "</th>"
+    }
+    inner += "</tr>";
+    
+    for(var i = 0; i < rows; i++) {
+        inner += "<tr><th class='row-name'>" + atkList[i].tag + "</th>"
+        for(var j = 0; j < columns; j++) {
+            console.log(i, ", ", j)
+            inner += "<td>" + calculate(atkList[i], defList[j], {
+                "dmglabel": false,
+                "dmg": true,
+                "models": false,
+                "breakdown": false,
+                "simulated": false
+            }) + "</td>";
+        }
+        inner += "</tr>"
+    }
+
+    table.innerHTML = inner;
+}
+function singleCalculate() {
+    var outputField = document.getElementById("output");
+    var atk = getAttacker()
+    var def = getDefender()
+    output = calculate(atk, def, outputOptions)
+    outputField.textContent += output + "\n\n"
+}
+function calculate(atk, def, options) {
+    console.log(atk)
+    console.log(def)
     //modifiers
     var modList = [];
-    modList = atkModifiers.concat(defModifiers);
+    modList = atk.mods.concat(def.mods);
     modList.sort((a,b) => a.priority - b.priority);
 
     var modListLow = [];
@@ -261,93 +422,39 @@ function calculate() {
         if(mod.var) while(mod.formula.includes("$var")) {
             mod.formula = mod.formula.replace('$var', mod.value[3]);
         }
-        mod.formula = (function (formula) {
+        mod.lambda = (function (formula) {
             return function () {
                 eval(formula);
             };
         })(mod.formula);
-        if(mod.priority < 0) modListLow.add(mod);
-        else modListHigh.add(mod);
+        if(mod.priority < 0) modListLow.push(mod);
+        else modListHigh.push(mod);
     }
 
-    //attacker stats
-    var count = parseInt(document.getElementById("count").value);
-    var bs = parseInt(document.getElementById("skill").value)
-    var str = parseInt(document.getElementById("strength").value)
-    var ap = parseInt(document.getElementById("ap").value)
-    
-    //attacks
-    var atk_vals = document.getElementById("attacks").dataset.values;
-    atk_vals = JSON.parse(atk_vals);
-    atk_vals.forEach(i => parseInt(i));
-    var atk_dm = atk_vals[0];
-    var atk_ds = atk_vals[1];
-    var atk_value = atk_vals[2];
-    var atk_avg = atk_vals[3];
-    var atk_variable = atk_vals[1] == 0 ? true : false;
-    
-    //damage
-    var dmg_vals = document.getElementById("damage").dataset.values;
-    dmg_vals = JSON.parse(dmg_vals);
-    dmg_vals.forEach(i => parseInt(i));
-    var dmg_dm = dmg_vals[0];
-    var dmg_ds = dmg_vals[1];
-    var dmg_value = dmg_vals[2];
-    var dmg_avg = dmg_vals[3];
-    var dmg_variable = dmg_vals[1] == 0 ? true : false; 
-
-    //target stats
-    var tgh = parseInt(document.getElementById("toughness").value);
-    var wd = parseInt(document.getElementById("wounds").value);
-    var sv = parseInt(document.getElementById("save").value);
-    var models = parseInt(document.getElementById("models").value);
-    var inv = parseInt(document.getElementById("invuln").value);
-    var fnp = parseInt(document.getElementById("feel-no-pain").value);
-    var mortalFnp = fnp;
-
-    //--------------------modifier variables
+    //modifier variables
 
     var modVar = modVars();
-    var attackerTags = [];
-    var defenderTags = [];
-
-    var critWoundThresh = 6;
-    var critHitThresh = 6;
-
-    var hitMod = 0;
-    var wdMod = 0;
-    var svMod = 0;
-
-    var hitrrMod = 1;
-    var wdrrMod = 1;
-
-    var autoHit = false;
-
-    var damageMod = 0;
-    var damageModScale = 1;
-
-    var fishForCritHits = false;
-    var fishForCritWounds = false;
 
     //run low prio modifiers (<0)
     modListLow.forEach(mod => {
-        var func = mod.formula;
+        var func = mod.lambda;
         func();
     });
 
     //determine hit threshold, wound threshold, and save threshold
     var wdVal = 4;
-    var bsVal = bs;
-    var svVal = sv;
+    var bsVal = atk.bs;
+    var apVal = atk.ap;
+    var svVal = def.sv;
 
     //wound threshold
-    if(tgh > str) {
+    if(def.tgh > atk.str) {
         wdVal++;
-        if(tgh >= str * 2)
+        if(def.tgh >= atk.str * 2)
             wdVal++;
-    } else if(tgh < str) {
+    } else if(def.tgh < atk.str) {
         wdVal--;
-        if(tgh * 2 <= str)
+        if(def.tgh * 2 <= atk.str)
             wdVal--;
     }
     if(modVar.wdMod > 1) modVar.wdMod = 1;
@@ -364,71 +471,86 @@ function calculate() {
     if(bsVal < 2) bsVal = 2;
     if(bsVal > 6) bsVal = 6;
 
-    //save threshold
-    if(modVar.svMod > 1) modVar.svMod = 1;
-    if(modVar.svMod < -1) modVar.svMod = -1;
-    svVal += ap - modVar.svMod;
-    if(svVal > 7) svVal = 7;
-    if(svVal < 2) svVal = 2;
-
-    if(inv > 0 && inv < 7) svVal = (svVal > inv ? inv : svVal);
-
     //determine probabilities
     var hitResult = calculateReroll(bsVal, modVar.critHitThresh, modVar.hitrrMod, modVar.fishForCritHits);
-    var hit = 0;
-    var critHit = 0;
+    var hit = 0.0;
+    var critHit = 0.0;
     if(modVar.autoHit) {
         hit = 1;
     } else {
         hit = hitResult[0];
         critHit = hitResult[1];
     }
+
     var wdResult = calculateReroll(wdVal, modVar.critWoundThresh, modVar.wdrrMod, modVar.fishForCritWounds);
     var wound = wdResult[0];
     var critWd = wdResult[1];
-    
-    var save = 1.0 - thresh(svVal);
-    
     var woundOffset = 0;
+    var mortalWounds = 0;
 
     //run high prio modifiers
     modListHigh.forEach(mod => {
-        var func = mod.formula;
+        console.log(mod.lambda)
+        var func = mod.lambda;
         func();
     });
+    
+    //save threshold
+    apVal += modVar.apMod;
+    if(modVar.svMod > 1) modVar.svMod = 1;
+    if(modVar.svMod < -1) modVar.svMod = -1;
+    svVal += apVal - modVar.svMod;
+    if(svVal > 7) svVal = 7;
+    if(svVal < 2) svVal = 2;
 
-    if(!simulated) {
+    if(def.inv > 0 && def.inv < 7) svVal = (svVal > def.inv ? def.inv : svVal);
+    var save = 1.0 - thresh(svVal);
 
-        var moddedDmg = dmg_avg * modVar.damageModScale + modVar.damageMod;
+    if(!options.simulated) {
+
+        var moddedDmg = atk.dmg.avg * modVar.damageModScale + modVar.damageMod;
         if(moddedDmg < 1) moddedDmg = 1;
 
         var atksPerModelDeath = 0;
         var dmgCounter = 0;
-        while(dmgCounter < wd) {
+        while(dmgCounter < def.wd) {
             atksPerModelDeath++
-            dmgCounter+= dmg_avg;
+            dmgCounter+= atk.dmg.avg;
         }
         //ratio of avg damage needed to kill model versus damaged used
-        var overkillRatio = wd / (dmg_avg * atksPerModelDeath);
+        var overkillRatio = def.wd / (atk.dmg.avg * atksPerModelDeath);
 
         //base chance of an attack doing damage
         var passProb = (((hit + critHit) * (wound + critWd)) + woundOffset) * save;
-        var totalMod = (1 - thresh(fnp)) * moddedDmg * count * atk_avg;
+        var totalMod = (1 - thresh(def.fnp)) * moddedDmg * atk.count * atk.atk.avg;
 
         var preOK =  totalMod * passProb;
         var resultFromFailedSaves = preOK * overkillRatio;
         var overkill = preOK - resultFromFailedSaves;
 
-        var resultFromMortalWounds = (1 - thresh(mortalFnp)) * moddedDmg * count * atk_avg * mortalWounds;
+        var resultFromMortalWounds = (1 - thresh(def.mortalFnp)) * moddedDmg * atk.count * atk.atk.avg * mortalWounds;
 
         var totalDamage = (resultFromFailedSaves + resultFromMortalWounds);
-        var modelsKilled = totalDamage / wd;
-        outputField.textContent += "Damage Dealt:\t\t\t" + totalDamage.toFixed(3);
-        outputField.textContent += "\n\tModels Killed:\t\t" + modelsKilled.toFixed(3);
-        if(resultFromFailedSaves > 0) outputField.textContent += "\n\tFrom Failed Saves:\t" + resultFromFailedSaves.toFixed(3);
-        if(overkill > 0) outputField.textContent += "\n\tLost from Overkill:\t" + overkill.toFixed(3);
-        if(mortalWounds > 0) outputField.textContent += "\n\tFrom Mortal Wounds:\t" + resultFromMortalWounds.toFixed(3);
-        outputField.textContent += "\n\n";
+        var modelsKilled = totalDamage / def.wd;
+
+        var output = "";
+
+        if(options.dmg) {
+            if(options.dmglabel) output += "Damage Dealt:\t\t\t" 
+            output += totalDamage.toFixed(3);
+        }
+        if(options.models) output += "\n\tModels Killed:\t\t" + modelsKilled.toFixed(3);
+
+        if(options.breakdown) {
+            if(resultFromFailedSaves > 0)
+                    output += "\n\tFrom Failed Saves:\t" + resultFromFailedSaves.toFixed(3);
+            if(overkill > 0)
+                    output += "\n\tLost from Overkill:\t" + overkill.toFixed(3);
+            if(mortalWounds > 0)
+                output += "\n\tFrom Mortal Wounds:\t" + resultFromMortalWounds.toFixed(3);
+        }
+
+        return output;
     } else {
 
     }
@@ -451,12 +573,14 @@ function loadSelectedToAttacker() {
     var nameField = document.getElementById("header-attacker-name");
     var profField = document.getElementById("header-attacker-profile");
 
+    var count = document.getElementById("count")
     var skill = document.getElementById("skill");
     var str = document.getElementById("strength");
     var ap = document.getElementById("ap");
     var attacks = document.getElementById("attacks");
     var damage = document.getElementById("damage");
 
+    count.value = unitData.defstats.models
     skill.value = profData.stats.skill;
     str.value = profData.stats.str;
     ap.value = profData.stats.ap;
@@ -480,6 +604,10 @@ function loadSelectedToDefender() {
     var unitName = selectedUnit.dataset.name;
 
     clearModifiers('defender');
+
+    unitData.defstats.mods.forEach(mod => {
+        addModifier('modifier-defender', mod)
+    })
 
     var tgh = document.getElementById("toughness");
     var wd = document.getElementById("wounds");
@@ -542,6 +670,49 @@ function modifierInit(modifierData) {
         optionElement.setAttribute("data-value", JSON.stringify(defModifierData[i]));
         defModList.appendChild(optionElement);
     }
+}
+function loadGenericDefensiveLineup() {
+    console.log("e")
+    unitList = []
+    console.log(unitData)
+    unitData.forEach( faction => {
+        console.log("ee", faction.faction)
+        if(faction.faction == "Generic") {
+            faction.units.forEach(subset => {
+                console.log(subset.name)
+                if(subset.name = "Defensive Profiles") {
+                    subset.children.forEach( unit => {
+                        console.log(unit.name)
+                        var defData = unit.data.defstats
+                        defData.mods.forEach(mod => {
+                            mod = parseModifier('modifier-defender', mod)
+                        })
+                        defData.tag = unit.name
+                        unitList.push(defData)
+                    })
+                }
+            })
+        }
+    })
+    var defenderList = document.getElementById('list-test-def');
+    unitList.forEach(profile => {
+        console.log(profile.name)
+        var listItem = document.createElement('li');
+        listItem.className = "modListItem"
+
+        var textSpan = document.createElement('span');
+        textSpan.textContent = profile.tag
+        listItem.appendChild(textSpan);
+
+        var button = document.createElement("button");
+        button.textContent = "Remove";
+        button.onclick = function() {removeListItem(button)};
+        listItem.appendChild(button);
+
+        listItem.setAttribute("data-value", JSON.stringify(profile))
+
+        defenderList.appendChild(listItem);
+    })
 }
 function unitsInit(statData) {
     unitData = statData;
@@ -652,7 +823,7 @@ function init() {
     .catch(error => {
         console.error('Error loading JSON file:', error);
     });
-    fetch('units.json')
+    fetch('output.json')
     .then(response => response.json())
     .then(data => unitsInit(data))
     .catch(error => {
@@ -676,7 +847,6 @@ function init() {
     });
     generateEmptyTable();
 }
-window.addEventListener('DOMContentLoaded', init);
 function modVars() {
     return {
         "attackerTags" : [],
@@ -685,12 +855,16 @@ function modVars() {
         "critWoundThresh" : 6,
         "critHitThresh" : 6,
 
+        "critWdMortal" : false,
+
         "hitMod" : 0,
         "wdMod" : 0,
         "svMod" : 0,
 
-        "hitrrMod" : 1,
-        "wdrrMod" : 1,
+        "apMod" : 0,
+
+        "hitrrMod" : 0,
+        "wdrrMod" : 0,
 
         "autoHit" : false,
 
@@ -701,3 +875,4 @@ function modVars() {
         "fishForCritWounds" : false,
     }
 }
+window.addEventListener('DOMContentLoaded', init);

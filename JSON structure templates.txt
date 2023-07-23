@@ -32,46 +32,57 @@ Unit SubFolder Structure
 }
 
 
-
+Two subgroups of modifiers:
+    low list: high on this list = a lower prio number, thus executed first
+        -15 add tags
+        -10 modifiers that depend on tags
+        affect hit or wound probabilities
+        -5  crit thresholds
+        -4  reroll mod
+        
+    high lists: mods that rely on outcomes from other mods
+        save modifiers
+        crit effects (lethal hits, dev wds, sustained hits), rely on calculated crit chance
 
 Modifiers-Atk
-    +1 to Hit
-    +1 to Wound
-    Anti-Infantry
-    Anti-Monster
-    Anti-Psyker
-    Anti-Vehicle
-    Blast
-    Devastating Wounds
-    Disable Armor Saves
-    Ignores Cover
-    Increase AP on Critical Wound
-    Lethal Hits
-    Psychic
-    Reroll 1 Hit Roll
-    Reroll 1 Wound Roll
-    Reroll 1's to Hit
-    Reroll 1's to Wound
-    Reroll Hits
-    Reroll Wounds
-    Sustained Hits
-    Torrent
++1 to Hit
++1 to Wound
+Anti-Infantry
+Anti-Monster
+Anti-Psyker
+Anti-Vehicle
+Blast
+Devastating Wounds
+Disable Armor Saves
+Ignores Cover
+Increase AP on Critical Wound
+Lethal Hits
+Psychic
+Reroll 1 Hit Roll
+Reroll 1 Wound Roll
+Reroll 1's to Hit
+Reroll 1's to Wound
+Reroll Hits
+Reroll Wounds
+Sustained Hits
+Torrent
 
 Modifiers-Def
-    +1 to Save
-    -1 Damage
-    -1 to Hit
-    -1 to Wound
-    -1 to Wound if Str > Tgh
-    -1 to Wound if Str >= Tgh
-    Chaos
-    Cover
-    Daemon
-    Fly
-    FnP - Mortal Wounds
-    FnP - Psychic
-    Half Damage
-    Infantry
-    Monster
-    Psyker
-    Vehicle
++1 to Save
+-1 Damage
+-1 to Hit
+-1 to Wound
+-1 to Wound if Str > Tgh
+-1 to Wound if Str >= Tgh
+Chaos
+Cover
+Daemon
+Fly
+FnP - Mortal Wounds
+FnP - Psychic
+Half Damage
+Infantry
+Monster
+Psyker
+Vehicle
+Character

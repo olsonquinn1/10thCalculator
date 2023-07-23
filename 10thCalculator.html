@@ -51,7 +51,7 @@
                         <span id="damage-error" class="error-indicator"></span><br><br>
                     </div>
                     <div class="form-row">
-                        <button type="button">Add to Group</button>
+                        <button type="button" onclick="addAttackerToTable()">Add to Group</button>
                         <input class="longer" type="text" id="atk-group-input" placeholder="Tag"><br><br>
                     </div>
                 </div>
@@ -104,6 +104,11 @@
                     <div class="form-row">
                         <label style = "height: 27px;"></label>
                     </div>
+                    <div class="form-row">
+                        <button type="button" onclick="addDefenderToTable()">Add to Group</button>
+                        <input class="longer" type="text" id="def-group-input" placeholder="Tag"><br><br>
+                    </div>
+                    
                     
                 </div>
                 <div class="modifier-block">
@@ -125,7 +130,7 @@
             <div class="calculate">
                 <div class ="calculate-btns">
                     <div class="calc">
-                        <button  id="calculate-btn" onclick="calculate()">Calculate</button>
+                        <button  id="calculate-btn" onclick="singleCalculate()">Calculate</button>
                     </div>
                     <div class="clear">
                         <button id="clear-btn" onclick="clearOutput()">Clear</button>
@@ -138,26 +143,28 @@
     <div class="container-2">
         <div class="sub-container-2">
             <div>
-                <h2>Attacking Profiles</h2>
+                <div class="container-2">
+                    <h2>Attacking Profiles</h2>
+                    <button class="add-generic">Add Generic Profiles</button>
+                </div>
+                
                 <ul id="list-test-atk" class="modifier-list"></ul>
             </div>
             <div>
-                <h2>Defending Profiles</h2>
+                <div class="container-2">
+                    <h2>Defending Profiles</h2>
+                    <button class="add-generic" onclick="loadGenericDefensiveLineup()">Add Generic Profiles</button>
+                </div>
                 <ul id="list-test-def" class="modifier-list"></ul>
+            </div>
+            <div class="output-table-calc">
+                <button onclick="tableCalculate()">Calculate</button>
             </div>
         </div>
         <div class="output-table-container">
-            <div class="output-table-header y">
-                <h2>Attacking Profiles</h2>
-            </div>
-            <div>
-                <div class="output-table-header x">
-                    <h2 >Defensive Profiles</h2>
-                </div>
-                <div class="output-table">
-                    <table id="output-table">
-                    </table>
-                </div>
+            <div class="output-table">
+                <table id="output-table">
+                </table>
             </div>
         </div>
     </div>
