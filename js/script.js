@@ -9,6 +9,7 @@ var outputOptions = {
     "dmglabel": true,
     "dmg": true,
     "models": true,
+    "shotsToKill": false,
     "breakdown": true,
     "simulated": false
 }
@@ -163,7 +164,7 @@ function addDefenderToTable() {
 
     defenderList.appendChild(listItem);
 }
-function parseModifier(type, modifier) {
+function parseModifier(type, modifier, check) {
     var modifierData;
     if(type == "modifier-attacker") modifierData = atkModifierData;
     else if(type == "modifier-defender") modifierData = defModifierData;
@@ -175,10 +176,10 @@ function parseModifier(type, modifier) {
         if(matches.length == 1) {
             selectedModifier = matches[0];
             var test = testModifier(type, selectedModifier);
-            if(test == 1) {
+            if(check && test == 1) {
                 alert("Modifier of name \"" + selectedModifier.name + "\" already in use");
                 return;
-            } else if(test == 2) {
+            } else if(check && test == 2) {
                 alert("Modifier of type \"" + selectedModifier.type + "\" already in use");
                 return;
             }
@@ -210,14 +211,14 @@ function parseModifier(type, modifier) {
     }
     if(selectedModifier == null) {
         alert("No modifier matches \"" + modifier + "\"");
-        return false;
+        return;
     }
     return selectedModifier
 }
 function addModifier(type, modifier) {
     if(modifier.length == 0) return;
 
-    selectedModifier = parseModifier(type, modifier);
+    selectedModifier = parseModifier(type, modifier, true);
 
     var modifierList = document.getElementById('list-' + type);
     var listItem = document.createElement('li');
@@ -382,11 +383,10 @@ function tableCalculate() {
         inner += "<th class='column-name'>" + defList[i].tag + "</th>"
     }
     inner += "</tr>";
-    
+    var data = []
     for(var i = 0; i < rows; i++) {
         inner += "<tr><th class='row-name'>" + atkList[i].tag + "</th>"
         for(var j = 0; j < columns; j++) {
-            console.log(i, ", ", j)
             inner += "<td>" + calculate(atkList[i], defList[j], {
                 "dmglabel": false,
                 "dmg": true,
@@ -408,8 +408,6 @@ function singleCalculate() {
     outputField.textContent += output + "\n\n"
 }
 function calculate(atk, def, options) {
-    console.log(atk)
-    console.log(def)
     //modifiers
     var modList = [];
     modList = atk.mods.concat(def.mods);
@@ -432,7 +430,6 @@ function calculate(atk, def, options) {
     }
 
     //modifier variables
-
     var modVar = modVars();
 
     //run low prio modifiers (<0)
@@ -490,7 +487,6 @@ function calculate(atk, def, options) {
 
     //run high prio modifiers
     modListHigh.forEach(mod => {
-        console.log(mod.lambda)
         var func = mod.lambda;
         func();
     });
@@ -506,6 +502,7 @@ function calculate(atk, def, options) {
     if(def.inv > 0 && def.inv < 7) svVal = (svVal > def.inv ? def.inv : svVal);
     var save = 1.0 - thresh(svVal);
 
+
     if(!options.simulated) {
 
         var moddedDmg = atk.dmg.avg * modVar.damageModScale + modVar.damageMod;
@@ -520,8 +517,10 @@ function calculate(atk, def, options) {
         //ratio of avg damage needed to kill model versus damaged used
         var overkillRatio = def.wd / (atk.dmg.avg * atksPerModelDeath);
 
+
         //base chance of an attack doing damage
         var passProb = (((hit + critHit) * (wound + critWd)) + woundOffset) * save;
+
         var totalMod = (1 - thresh(def.fnp)) * moddedDmg * atk.count * atk.atk.avg;
 
         var preOK =  totalMod * passProb;
@@ -529,7 +528,6 @@ function calculate(atk, def, options) {
         var overkill = preOK - resultFromFailedSaves;
 
         var resultFromMortalWounds = (1 - thresh(def.mortalFnp)) * moddedDmg * atk.count * atk.atk.avg * mortalWounds;
-
         var totalDamage = (resultFromFailedSaves + resultFromMortalWounds);
         var modelsKilled = totalDamage / def.wd;
 
@@ -672,22 +670,29 @@ function modifierInit(modifierData) {
     }
 }
 function loadGenericDefensiveLineup() {
-    console.log("e")
     unitList = []
-    console.log(unitData)
     unitData.forEach( faction => {
-        console.log("ee", faction.faction)
         if(faction.faction == "Generic") {
             faction.units.forEach(subset => {
-                console.log(subset.name)
                 if(subset.name = "Defensive Profiles") {
                     subset.children.forEach( unit => {
-                        console.log(unit.name)
                         var defData = unit.data.defstats
+                        var parsedModList = []
                         defData.mods.forEach(mod => {
-                            mod = parseModifier('modifier-defender', mod)
+                            pm = parseModifier('modifier-defender', mod, false)
+                            parsedModList.push(pm)
                         })
+                        console.log("lgdl:pml ", parsedModList)
+                        defData.mods = parsedModList
                         defData.tag = unit.name
+                        defData.fnp = parseInt(defData.fnp)
+                        defData.mortalFnp = defData.fnp
+                        defData.inv = parseInt(defData.inv)
+                        defData.models = parseInt(defData.models)
+                        defData.sv = parseInt(defData.sv)
+                        defData.tgh = parseInt(defData.tgh)
+                        defData.wd = parseInt(defData.wd)
+                        console.log("lgdl:dd ", defData)
                         unitList.push(defData)
                     })
                 }
@@ -696,7 +701,6 @@ function loadGenericDefensiveLineup() {
     })
     var defenderList = document.getElementById('list-test-def');
     unitList.forEach(profile => {
-        console.log(profile.name)
         var listItem = document.createElement('li');
         listItem.className = "modListItem"
 
@@ -845,6 +849,7 @@ function init() {
             addModifier('modifier-attacker');
         }
     });
+
     generateEmptyTable();
 }
 function modVars() {
