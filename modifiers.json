@@ -12,7 +12,7 @@
         "type": "modifier",
         "var": false,
         "priority": -1,
-        "formula": "atk_avg += Math.floor(def.models / 5)"
+        "formula": "atk.atk.value += Math.floor(def.models / 5)"
     },
     {
         "name": "Ignores Cover",
@@ -103,7 +103,7 @@
         "type": "modifier",
         "var": false,
         "priority": 5,
-        "formula": "woundOffset += critHit; hit -= critHit"
+        "formula": "modVar.lethalHit = true"
     },
     {
         "name": "Sustained Hits",
@@ -111,14 +111,14 @@
         "var": true,
         "value": null,
         "priority": 5,
-        "formula": "hit += $var * critHit"
+        "formula": "modVar.extraHit = parseDiceVariable( $var )"
     },
     {
         "name": "Devastating Wounds",
         "type": "modifier",
         "var": false,
         "priority": 15,
-        "formula": "{wound = Math.max(0, wound - critWd);mortalWounds += hit * critWd; modVar.critWdMortal = true;}"
+        "formula": "modVar.devWound = true"
     },
     {
         "name": "Anti-Infantry",
@@ -251,14 +251,14 @@
         "type": "damageModifier",
         "var": false,
         "priority": 0,
-        "formula": "modVar.damageMod-=1"
+        "formula": "modVar.dmgMinus1 = true"
     },
     {
         "name": "Half Damage",
         "type": "damageModifier",
         "var": false,
         "priority": 0,
-        "formula": "modVar.damageModScale=0.5"
+        "formula": "modVar.damageHalf = true"
     },
     {
         "name": "-1 to Hit",

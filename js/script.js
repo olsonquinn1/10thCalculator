@@ -76,24 +76,12 @@ function getAttacker() {
     //attacks
     obj.atk = {}
     var atk_vals = document.getElementById("attacks").dataset.values;
-    atk_vals = JSON.parse(atk_vals);
-    atk_vals.forEach(i => parseInt(i));
-    obj.atk.diceSides = atk_vals[1];
-    obj.atk.diceMulti = atk_vals[0];
-    obj.atk.value = atk_vals[2];
-    obj.atk.avg = atk_vals[3];
-    obj.atk.isVariable = atk_vals[1] == 0 ? true : false;
-    
+    obj.atk = JSON.parse(atk_vals);
+
     //damage
     obj.dmg = {}
     var dmg_vals = document.getElementById("damage").dataset.values;
-    dmg_vals = JSON.parse(dmg_vals);
-    dmg_vals.forEach(i => parseInt(i));
-    obj.dmg.diceSides = dmg_vals[0];
-    obj.dmg.diceMulti = dmg_vals[1];
-    obj.dmg.value  = dmg_vals[2];
-    obj.dmg.avg = dmg_vals[3];
-    obj.dmg.isVariable = dmg_vals[1] == 0 ? true : false;
+    obj.dmg = JSON.parse(dmg_vals);
 
     return obj
 }
@@ -302,7 +290,13 @@ function parseDiceVariable(s) {
         diceMultiplier = 0;
 
     var avg = diceMultiplier * (diceSides + 1) / 2 + value;
-    var vals = [diceMultiplier, diceSides, value, avg];
+    var vals = {
+        "diceMulti": diceMultiplier,
+        "diceSides": diceSides,
+        "value": value,
+        "avg": avg,
+        "isVariable": diceMultiplier != 0
+    };
     return vals;
 }
 function getValue(field) {
@@ -334,12 +328,46 @@ function getModifiers(type) {
 function thresh(i) {
     return ( 7.0 - i ) / 6.0;
 }
+
+//return total resulting from roll of 'count' dice with 'sides' # of sides
+function diceRoll(sides, count) {
+    var total = 0;
+    for(var i = 0; i < count; i++)
+        total += Math.floor(Math.random() * sides) + 1
+    return total
+}
+
+//return if roll with probability is success or fail
 function roll(probability) {
     var roll = Math.random();
     if(roll <= probability)
         return true;
     return false;
 }
+
+//return number of successes of probability with 'count' rolls
+function multiRoll(probability, count) {
+    var success = 0
+    for(var i = 0; i < count; i++)
+        if(roll(probability)) success++
+    return success
+}
+
+//three outcome dice roll (assumes a and b are mutex)
+function threshProb(a, b) {
+    var roll = Math.random()
+    return [roll <= a, roll <= (b + a) && roll > a]
+}
+function multiThreshProb(a, b, count) {
+    var results = [0, 0]
+    for(var i = 0; i < count; i++) {
+        res = threshProb(a, b)
+        if(res[0]) results[0]++
+        if(res[1]) results[1]++
+    }
+    return results
+}
+
 function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
     //reroll none: rrMod = 0;
     //reroll all: rrMod = 1;
@@ -391,6 +419,7 @@ function tableCalculate() {
                 "dmglabel": false,
                 "dmg": true,
                 "models": false,
+                "shotsToKill": false,
                 "breakdown": false,
                 "simulated": false
             }) + "</td>";
@@ -408,6 +437,8 @@ function singleCalculate() {
     outputField.textContent += output + "\n\n"
 }
 function calculate(atk, def, options) {
+    var debug = true
+    if(debug) console.log(atk, def)
     //modifiers
     var modList = [];
     modList = atk.mods.concat(def.mods);
@@ -415,7 +446,6 @@ function calculate(atk, def, options) {
 
     var modListLow = [];
     var modListHigh = [];
-
     for(var mod of modList) {
         if(mod.var) while(mod.formula.includes("$var")) {
             mod.formula = mod.formula.replace('$var', mod.value[3]);
@@ -428,6 +458,7 @@ function calculate(atk, def, options) {
         if(mod.priority < 0) modListLow.push(mod);
         else modListHigh.push(mod);
     }
+    if(debug) console.log(modListLow, modListHigh)
 
     //modifier variables
     var modVar = modVars();
@@ -502,10 +533,12 @@ function calculate(atk, def, options) {
     if(def.inv > 0 && def.inv < 7) svVal = (svVal > def.inv ? def.inv : svVal);
     var save = 1.0 - thresh(svVal);
 
-
+    if(debug) console.log("hit, wd, sv: ", hit + critHit, wound + critWd, save)
+    if(debug) console.log("mod vars: ", modVar)
+    
     if(!options.simulated) {
 
-        var moddedDmg = atk.dmg.avg * modVar.damageModScale + modVar.damageMod;
+        var moddedDmg = atk.dmg.avg * (modVar.damageHalf ? 0.5 : 1) + (modVar.damageMinus1 ? -1 : 0);
         if(moddedDmg < 1) moddedDmg = 1;
 
         var atksPerModelDeath = 0;
@@ -517,9 +550,24 @@ function calculate(atk, def, options) {
         //ratio of avg damage needed to kill model versus damaged used
         var overkillRatio = def.wd / (atk.dmg.avg * atksPerModelDeath);
 
-
+        //woundOffset += critHit; hit -= critHit
+        //{wound = Math.max(0, wound - critWd);mortalWounds += hit * critWd}
         //base chance of an attack doing damage
-        var passProb = (((hit + critHit) * (wound + critWd)) + woundOffset) * save;
+        if(modVar.lethalHit) {
+            woundOffset = critHit
+            wound = Math.max(0, wound - critHit)
+        }
+        if(modVar.devWound) {
+            wound = Math.max(0, wound - critWd)
+            mortalWounds += hit * critWd
+        }
+        var passProb = (
+            (
+                (
+                    hit + critHit + (modVar.extraHit ? (critHit * modVar.extraHit.avg) : 0)
+                ) * (wound + critWd)
+            ) + woundOffset
+        ) * save;
 
         var totalMod = (1 - thresh(def.fnp)) * moddedDmg * atk.count * atk.atk.avg;
 
@@ -550,6 +598,162 @@ function calculate(atk, def, options) {
 
         return output;
     } else {
+        var tests = 10000
+        var results = {
+            "hits": {
+                "data": [],
+                "avg": 0
+            },
+            "wounds": {
+                "data": [],
+                "avg": 0
+            },
+            "failedSaves": {
+                "data": [],
+                "avg": 0
+            },
+            "dmgDealt": {
+                "data": [],
+                "avg": 0
+            },
+            "mwDealt": {
+                "data": [],
+                "avg": 0
+            },
+            "modelsKilled": {
+                "data": [],
+                "avg": 0
+            },
+            "overkill" : {
+                "data": [],
+                "avg": 0
+            }
+        }
+        for(var i = 0; i < tests; i++) {
+            //determine attacks
+            var attacks = 0;
+            if(atk.atk.isVariable) {
+                attacks = diceRoll(atk.atk.diceSides, atk.atk.diceMulti * atk.count) + atk.atk.value * atk.count
+            } else {
+                attacks = atk.atk.value
+            }
+
+            var hitRes = 0
+            var wdRes = 0
+
+            //roll hits
+            var hits = multiThreshProb(hit, critHit, attacks)
+            hitRes += hits[0]
+            if(modVar.lethalHit) wdRes += hits[1]
+            else hitRes += hits[1]
+            if(modVar.extraHit) hitRes += diceRoll(extraHit.diceSides, extraHit.diceMulti * hits[1]) + extraHit.value * hits[1]
+            results.hits.data.push(hitRes)
+            results.hits.avg += hitRes
+
+            //roll wounds
+            var devWds = 0
+            var wounds = multiThreshProb(wound, critWd, hitRes)
+            wdRes += wounds[0]
+            if(modVar.devWound) devWds += wounds[1]
+            else wdRes += wounds[1]
+            results.wounds.data.push(wdRes)
+            results.wounds.avg += wdRes
+
+            //roll saves
+            var failedSaves = multiRoll(save, wdRes)
+            results.failedSaves.data.push(failedSaves)
+            results.failedSaves.avg += failedSaves
+
+            //damage
+            var dmgDealt = 0
+            var dmgLostOverkill = 0
+            var modelsLeft = def.models
+            var wdLeft = def.wd
+            fnpProb = thresh(def.fnp)
+            mortalFnpProb = thresh(def.mortalFnp)
+            for(var k = 0; k < failedSaves; k++) {
+                var val = atk.dmg.value
+                if(atk.dmg.isVariable)
+                    val = diceRoll(atk.dmg.diceSides, atk.dmg.diceMulti) + atk.dmg.value
+
+                if(modVar.damageHalf)
+                    val = Math.ceil(val / 2.0)
+                else if(modVar.damageMinus1)
+                    val = Math.max(1, val - 1)
+
+                if(fnpProb > 0) for(var j = 0; j < val; j++)
+                    if(roll(fnpProb)) val--
+                if(modelsLeft > 0) {
+                    wdLeft -= val
+                    if(wdLeft <= 0) {
+                        modelsLeft--
+                        dmgDealt += (val + wdLeft)
+                        dmgLostOverkill -= wdLeft
+                        wdLeft = def.wd
+                    } else {
+                        dmgDealt += val
+                    }
+                } else dmgLostOverkill += val
+            }
+            //apply mortal wounds
+            var mwDealt = 0
+            for(var k = 0; k < devWds; k++) {
+                var val = atk.dmg.value
+                if(atk.dmg.isVariable)
+                    val = diceRoll(atk.dmg.diceSides, atk.dmg.diceMulti) + atk.dmg.value
+
+                if(modVar.damageHalf)
+                    val = Math.ceil(val / 2.0)
+                else if(modVar.damageMinus1)
+                    val = Math.max(1, val - 1)
+
+                if(mortalFnpProb > 0) for(var j = 0; j < val; j++)
+                    if(roll(mortalFnpProb)) val--
+                
+                if(modelsLeft > 0) while(modelsLeft > 0) {
+                    wdLeft -= val
+                    if(wdLeft <= 0) {
+                        modelsLeft--
+                        if(modelsLeft > 0) mwDealt += val
+                        else mwDealt += val + wdLeft
+                        wdLeft += def.wd
+                    }
+                } else {
+                    dmgLostOverkill += val
+                }
+            }
+            dmgDealt += mwDealt
+
+            results.mwDealt.data.push(mwDealt)
+            results.mwDealt.avg += mwDealt
+            
+            results.dmgDealt.data.push(dmgDealt)
+            results.dmgDealt.avg += dmgDealt
+
+            results.modelsKilled.data.push(def.models - modelsLeft)
+            results.modelsKilled.avg += (def.models - modelsLeft)
+
+            results.overkill.data.push(dmgLostOverkill)
+            results.overkill.avg += dmgLostOverkill
+        }
+        results.hits.avg /= tests
+        results.wounds.avg /= tests
+        results.failedSaves.avg /= tests
+        results.mwDealt.avg /= tests
+        results.dmgDealt.avg /= tests
+        results.modelsKilled.avg /= tests
+        results.overkill.avg /= tests
+
+        var output = "stat\t|\taverage"
+            + "\nhit\t|\t" + results.hits.avg.toFixed(3)
+            + "\nwound\t|\t" + results.wounds.avg.toFixed(3)
+            + "\nfailedSave\t|\t" + results.failedSaves.avg.toFixed(3)
+            + "\nmwDealt\t|\t" + results.mwDealt.avg.toFixed(3)
+            + "\ndmgDealt\t|\t" + results.dmgDealt.avg.toFixed(3)
+            + "\nmodelsKilled\t|\t" + results.modelsKilled.avg.toFixed(3)
+            + "\noverkill\t|\t" + results.overkill.avg.toFixed(3)
+        
+        return output
 
     }
 }
@@ -682,7 +886,6 @@ function loadGenericDefensiveLineup() {
                             pm = parseModifier('modifier-defender', mod, false)
                             parsedModList.push(pm)
                         })
-                        console.log("lgdl:pml ", parsedModList)
                         defData.mods = parsedModList
                         defData.tag = unit.name
                         defData.fnp = parseInt(defData.fnp)
@@ -692,7 +895,6 @@ function loadGenericDefensiveLineup() {
                         defData.sv = parseInt(defData.sv)
                         defData.tgh = parseInt(defData.tgh)
                         defData.wd = parseInt(defData.wd)
-                        console.log("lgdl:dd ", defData)
                         unitList.push(defData)
                     })
                 }
@@ -860,8 +1062,6 @@ function modVars() {
         "critWoundThresh" : 6,
         "critHitThresh" : 6,
 
-        "critWdMortal" : false,
-
         "hitMod" : 0,
         "wdMod" : 0,
         "svMod" : 0,
@@ -872,6 +1072,13 @@ function modVars() {
         "wdrrMod" : 0,
 
         "autoHit" : false,
+
+        "extraHit" : false,
+        "lethalHit": false,
+        "devWound" : false,
+
+        "dmgMinus1": false,
+        "dmgHalf": false,
 
         "damageMod" : 0,
         "damageModScale" : 1,
