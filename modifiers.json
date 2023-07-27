@@ -111,7 +111,7 @@
         "var": true,
         "value": null,
         "priority": 5,
-        "formula": "modVar.extraHit = parseDiceVariable( $var )"
+        "formula": "modVar.extraHit = parseDiceVariable(' $var ')"
     },
     {
         "name": "Devastating Wounds",

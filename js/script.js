@@ -4,6 +4,7 @@ var selectedUnit;
 var selectedProfile;
 var unitData;
 var tableData;
+var debug = true
 
 var outputOptions = {
     "dmglabel": true,
@@ -14,321 +15,11 @@ var outputOptions = {
     "simulated": false
 }
 
-function clearOutput() {
-    var outputField = document.getElementById("output");
-    outputField.textContent = "";
-}
-function testModifier(listType, testMod) {
-    var modifierList = document.getElementById('list-' + listType);
-    var listItems = modifierList.getElementsByTagName("li");
-    var modifiers = Array.from(listItems).map(
-        mod => JSON.parse(mod.dataset.value)
-    );
-    var modifierTypes = modifiers.map(
-        mod => mod.type
-    );
-    var modifierNames = modifiers.map(
-        mod => mod.name
-    );
-    if(modifierNames.includes(testMod.name)) return 1;
-    if(testMod.type == 'modifier' || testMod.type == 'tag') return 0;
-    if(modifierTypes.includes(testMod.type)) return 2;
-    return 0;
-}
-function clearModifiers(type) {
-    var list = document.getElementById('list-modifier-' + type);
-    list.innerHTML = "";
-}
-function generateEmptyTable() {
-    var table = document.getElementById("output-table");
-    var columns = 9;
-    var rows = 8;
-    var inner = "<tr><th></th>";
-    for(var i = 1; i <= columns; i++) {
-        inner += "<th class='column-name'>Defender " + i + "</th>"
-    }
-    inner += "</tr>";
-    
-    for(var i = 1; i < rows; i++) {
-        inner += "<tr><th class='row-name'>Attacker " + i + "</th>"
-        for(var j = 1; j <= columns; j++) {
-            inner += "<td></td>";
-        }
-        inner += "</tr>"
-    }
-
-
-    table.innerHTML = inner;
-}
-function getAttacker() {
-    var obj = {}
-
-    obj.mods = getModifiers("attacker")
-
-    var nameField = document.getElementById("header-attacker-profile");
-    obj.name = nameField.textContent
-
-    obj.count = parseInt(document.getElementById("count").value);
-    obj.bs = parseInt(document.getElementById("skill").value)
-    obj.str = parseInt(document.getElementById("strength").value)
-    obj.ap = parseInt(document.getElementById("ap").value)
-    
-    //attacks
-    obj.atk = {}
-    var atk_vals = document.getElementById("attacks").dataset.values;
-    obj.atk = JSON.parse(atk_vals);
-
-    //damage
-    obj.dmg = {}
-    var dmg_vals = document.getElementById("damage").dataset.values;
-    obj.dmg = JSON.parse(dmg_vals);
-
-    return obj
-}
-function getDefender() {
-    var obj = {}
-
-    obj.mods = getModifiers("defender")
-
-    //target stats
-    var nameField = document.getElementById("header-defender-name");
-    obj.name = nameField.textContent
-    obj.tgh = parseInt(document.getElementById("toughness").value);
-    obj.wd = parseInt(document.getElementById("wounds").value);
-    obj.sv = parseInt(document.getElementById("save").value);
-    obj.models = parseInt(document.getElementById("models").value);
-    obj.inv = parseInt(document.getElementById("invuln").value);
-    obj.fnp = parseInt(document.getElementById("feel-no-pain").value);
-    obj.mortalFnp = obj.fnp;
-
-    return obj
-}
-function addAttackerToTable() {
-
-    var profile = getAttacker()
-
-    var attackerList = document.getElementById('list-test-atk');
-    var listItem = document.createElement('li');
-    listItem.className = "modListItem"
-
-    var textSpan = document.createElement('span');
-    var tagElement = document.getElementById('atk-group-input')
-    var tagName = tagElement.value;
-    if(tagName == "") tagName = profile.name
-    textSpan.textContent = tagName;
-    profile.tag = tagName
-    listItem.appendChild(textSpan);
-
-    var button = document.createElement("button");
-    button.textContent = "Remove";
-    button.onclick = function() {removeListItem(button)};
-    listItem.appendChild(button);
-
-    listItem.setAttribute("data-value", JSON.stringify(profile))
-
-    attackerList.appendChild(listItem);
-}
-function addDefenderToTable() {
-    var profile = getDefender()
-
-    var defenderList = document.getElementById('list-test-def');
-    var listItem = document.createElement('li');
-    listItem.className = "modListItem"
-
-    var textSpan = document.createElement('span');
-    var tagElement = document.getElementById('def-group-input')
-    var tagName = tagElement.value;
-    if(tagName == "") tagName = profile.name
-    textSpan.textContent = tagName;
-    profile.tag = tagName
-    listItem.appendChild(textSpan);
-
-    var button = document.createElement("button");
-    button.textContent = "Remove";
-    button.onclick = function() {removeListItem(button)};
-    listItem.appendChild(button);
-
-    listItem.setAttribute("data-value", JSON.stringify(profile))
-
-    defenderList.appendChild(listItem);
-}
-function parseModifier(type, modifier, check) {
-    var modifierData;
-    if(type == "modifier-attacker") modifierData = atkModifierData;
-    else if(type == "modifier-defender") modifierData = defModifierData;
-    var selectedModifier;
-    var modVariable;
-    for(var i = modifier.length; i > 0; i--) {
-        var chkStr = modifier.slice(0, i);
-        var matches = modifierData.filter(i => i.name == chkStr);
-        if(matches.length == 1) {
-            selectedModifier = matches[0];
-            var test = testModifier(type, selectedModifier);
-            if(check && test == 1) {
-                alert("Modifier of name \"" + selectedModifier.name + "\" already in use");
-                return;
-            } else if(check && test == 2) {
-                alert("Modifier of type \"" + selectedModifier.type + "\" already in use");
-                return;
-            }
-
-            if(i != modifier.length) {
-                modVariable = modifier.slice(i, modifier.length);
-                modVariable = modVariable.replace(" ", "");
-
-                if(modVariable == "" || modVariable == null) break;
-
-                if(selectedModifier.var == false) {
-                    alert("Modifier \"" + selectedModifier.name + "\" Does not accept a variable");
-                    return;
-                }
-                
-                try {
-                    modVariable = parseDiceVariable(modVariable);
-                    selectedModifier.value = modVariable;
-                } catch(e) {
-                    alert("Error parsing variable for modifier \"" + selectedModifier.name + "\"");
-                    return;
-                }
-            } else if(selectedModifier.var == true) {
-                alert("Modifier \"" + selectedModifier.name + "\" needs a variable");
-                return;
-            }
-            break;
-        }
-    }
-    if(selectedModifier == null) {
-        alert("No modifier matches \"" + modifier + "\"");
-        return;
-    }
-    return selectedModifier
-}
-function addModifier(type, modifier) {
-    if(modifier.length == 0) return;
-
-    selectedModifier = parseModifier(type, modifier, true);
-
-    var modifierList = document.getElementById('list-' + type);
-    var listItem = document.createElement('li');
-    listItem.className = "modListItem";
-    listItem.setAttribute("data-value", JSON.stringify(selectedModifier));
-    
-    var textSpan = document.createElement('span');
-    textSpan.textContent = modifier;
-    listItem.appendChild(textSpan);
-
-    var button = document.createElement("button");
-    button.textContent = "Remove";
-    button.onclick = function() {removeListItem(button)};
-    listItem.appendChild(button);
-
-    modifierList.appendChild(listItem);
-}
-function removeListItem(button) {
-    button.parentNode.remove();
-}
-function parseDiceVariable(s) {
-
-    s = s.replace(" ", "");
-    s = s.toLowerCase();
-    var current = 0;
-    var end = s.length;
-    var diceMultiplier = 1.0;
-    var diceSides = 0.0;
-    var value = 0.0;
-
-    function charIsInt(i) {
-        return (s.charAt(i) >= '0' && s.charAt(i) <= '9');
-    }
-
-    function ensureNextChar(c) {
-        if(s.charAt(current) != c || current == end)
-            throw new Error();
-        current++;
-    }
-    
-    function ensureAndPopNextInt() {
-        if(!charIsInt(current) || current == end)
-            throw new Error(); 
-        var i = current;
-        while (charIsInt(i)) i++;
-        var next = s.substring(current, i);
-        current = i;
-        return parseInt(next);
-    }
-
-    if(charIsInt(0)) {      
-        var temp = ensureAndPopNextInt();
-        if(current == end) {
-            //temp is value and nothing else
-            value = temp;
-        } else {
-            //temp is multiplier followed by d then dice sides
-            diceMultiplier = temp;
-            ensureNextChar('d');        
-            diceSides = ensureAndPopNextInt();             
-            if(current < end) {      
-                //expect + followed by value
-                ensureNextChar('+');  
-                value = ensureAndPopNextInt();   
-                if(current != end) throw new Error();
-            } 
-        }
-    } else {
-        //expect d followed by dice sides
-        ensureNextChar('d');      
-        diceSides = ensureAndPopNextInt();
-        //if still parts remain, there should be + followed by value
-        if(current < end) {      
-            ensureNextChar('+');
-            value = ensureAndPopNextInt();
-            if(current != end) throw new Error();
-        } 
-    }
-
-    if(diceSides <= 0)
-        diceMultiplier = 0;
-
-    var avg = diceMultiplier * (diceSides + 1) / 2 + value;
-    var vals = {
-        "diceMulti": diceMultiplier,
-        "diceSides": diceSides,
-        "value": value,
-        "avg": avg,
-        "isVariable": diceMultiplier != 0
-    };
-    return vals;
-}
-function getValue(field) {
-
-    var errorIndicator = document.getElementById(field + "-error");
-    field = document.getElementById(field);
-
-    if(field.value.length == 0) {
-        errorIndicator.textContent = "";
-        return;
-    }
-
-    try {
-        var vals = parseDiceVariable(field.value);
-        vals = JSON.stringify(vals);
-        field.setAttribute("data-values", vals);
-        errorIndicator.textContent = "";
-    } catch(e) {
-        console.log(e);
-        errorIndicator.textContent = "*";
-    }
-}
-function getModifiers(type) {
-    var modifierList = document.getElementById('list-modifier-' + type);
-    var modifierItems = modifierList.getElementsByTagName('li');
-    var modifiers = Array.from(modifierItems);
-    return modifiers.map(item => JSON.parse(item.dataset.value));
-}
+//-----------------------------------------------   Probability Util   -----------------------------------------------
+//returns probabilty of threshold success on dice roll
 function thresh(i) {
     return ( 7.0 - i ) / 6.0;
 }
-
 //return total resulting from roll of 'count' dice with 'sides' # of sides
 function diceRoll(sides, count) {
     var total = 0;
@@ -336,7 +27,6 @@ function diceRoll(sides, count) {
         total += Math.floor(Math.random() * sides) + 1
     return total
 }
-
 //return if roll with probability is success or fail
 function roll(probability) {
     var roll = Math.random();
@@ -344,20 +34,17 @@ function roll(probability) {
         return true;
     return false;
 }
-
-//return number of successes of probability with 'count' rolls
 function multiRoll(probability, count) {
     var success = 0
     for(var i = 0; i < count; i++)
         if(roll(probability)) success++
     return success
 }
-
-//three outcome dice roll (assumes a and b are mutex)
+//three outcome roll (assumes a and b are mutex and sum <= 1)
 function threshProb(a, b) {
     var roll = Math.random()
     return [roll <= a, roll <= (b + a) && roll > a]
-}
+} 
 function multiThreshProb(a, b, count) {
     var results = [0, 0]
     for(var i = 0; i < count; i++) {
@@ -367,7 +54,7 @@ function multiThreshProb(a, b, count) {
     }
     return results
 }
-
+//calculate probabilities when two mutually exclusive thresholds exist, factors rerolls
 function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
     //reroll none: rrMod = 0;
     //reroll all: rrMod = 1;
@@ -392,52 +79,9 @@ function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
     }
     return [newProbs[0] - newProbs[1], newProbs[1]];
 }
-function tableCalculate() {
-    var atkListElement = document.getElementById('list-test-atk')
-    var atkListItems = atkListElement.getElementsByTagName('li')
-    var atkList = Array.from(atkListItems)
-    atkList = atkList.map(item => JSON.parse(item.dataset.value))
 
-    var defListElement = document.getElementById('list-test-def')
-    var defListItems = defListElement.getElementsByTagName('li')
-    var defList = Array.from(defListItems)
-    defList = defList.map(item => JSON.parse(item.dataset.value))
-
-    var table = document.getElementById("output-table");
-    var columns = defList.length;
-    var rows = atkList.length;
-    var inner = "<tr><th></th>";
-    for(var i = 0; i < columns; i++) {
-        inner += "<th class='column-name'>" + defList[i].tag + "</th>"
-    }
-    inner += "</tr>";
-    var data = []
-    for(var i = 0; i < rows; i++) {
-        inner += "<tr><th class='row-name'>" + atkList[i].tag + "</th>"
-        for(var j = 0; j < columns; j++) {
-            inner += "<td>" + calculate(atkList[i], defList[j], {
-                "dmglabel": false,
-                "dmg": true,
-                "models": false,
-                "shotsToKill": false,
-                "breakdown": false,
-                "simulated": false
-            }) + "</td>";
-        }
-        inner += "</tr>"
-    }
-
-    table.innerHTML = inner;
-}
-function singleCalculate() {
-    var outputField = document.getElementById("output");
-    var atk = getAttacker()
-    var def = getDefender()
-    output = calculate(atk, def, outputOptions)
-    outputField.textContent += output + "\n\n"
-}
+//-----------------------------------------------       Calculation        -----------------------------------------------
 function calculate(atk, def, options) {
-    var debug = true
     if(debug) console.log(atk, def)
     //modifiers
     var modList = [];
@@ -448,7 +92,7 @@ function calculate(atk, def, options) {
     var modListHigh = [];
     for(var mod of modList) {
         if(mod.var) while(mod.formula.includes("$var")) {
-            mod.formula = mod.formula.replace('$var', mod.value[3]);
+            mod.formula = mod.formula.replace('$var', mod.value);
         }
         mod.lambda = (function (formula) {
             return function () {
@@ -533,9 +177,9 @@ function calculate(atk, def, options) {
     if(def.inv > 0 && def.inv < 7) svVal = (svVal > def.inv ? def.inv : svVal);
     var save = 1.0 - thresh(svVal);
 
-    if(debug) console.log("hit, wd, sv: ", hit + critHit, wound + critWd, save)
+    if(debug) console.log("normhit, crithit, normwd, critwd, sv: ", hit, critHit, wound, critWd, save)
     if(debug) console.log("mod vars: ", modVar)
-    
+
     if(!options.simulated) {
 
         var moddedDmg = atk.dmg.avg * (modVar.damageHalf ? 0.5 : 1) + (modVar.damageMinus1 ? -1 : 0);
@@ -553,19 +197,28 @@ function calculate(atk, def, options) {
         //woundOffset += critHit; hit -= critHit
         //{wound = Math.max(0, wound - critWd);mortalWounds += hit * critWd}
         //base chance of an attack doing damage
+        var addCritHits = true
         if(modVar.lethalHit) {
+            addCritHits = false
             woundOffset = critHit
-            wound = Math.max(0, wound - critHit)
         }
+        var totalHit = hit
+        if(addCritHits) totalHit += critHit
+        if(modVar.extraHit) totalHit += critHit * modVar.extraHit.avg
+
+        var addCritWounds = true
         if(modVar.devWound) {
-            wound = Math.max(0, wound - critWd)
-            mortalWounds += hit * critWd
+            addCritWounds = false
+            mortalWounds += totalHit * critWd
         }
+        var totalWd = wound
+        if(addCritWounds) totalWd += critWd
+
         var passProb = (
             (
                 (
-                    hit + critHit + (modVar.extraHit ? (critHit * modVar.extraHit.avg) : 0)
-                ) * (wound + critWd)
+                    totalHit
+                ) * totalWd
             ) + woundOffset
         ) * save;
 
@@ -574,8 +227,9 @@ function calculate(atk, def, options) {
         var preOK =  totalMod * passProb;
         var resultFromFailedSaves = preOK * overkillRatio;
         var overkill = preOK - resultFromFailedSaves;
-
+        
         var resultFromMortalWounds = (1 - thresh(def.mortalFnp)) * moddedDmg * atk.count * atk.atk.avg * mortalWounds;
+        if(debug) console.log(def.mortalFnp, moddedDmg, atk.count, atk.atk.avg, mortalWounds)
         var totalDamage = (resultFromFailedSaves + resultFromMortalWounds);
         var modelsKilled = totalDamage / def.wd;
 
@@ -635,7 +289,7 @@ function calculate(atk, def, options) {
             if(atk.atk.isVariable) {
                 attacks = diceRoll(atk.atk.diceSides, atk.atk.diceMulti * atk.count) + atk.atk.value * atk.count
             } else {
-                attacks = atk.atk.value
+                attacks = atk.atk.value * atk.count
             }
 
             var hitRes = 0
@@ -711,12 +365,13 @@ function calculate(atk, def, options) {
                     if(roll(mortalFnpProb)) val--
                 
                 if(modelsLeft > 0) while(modelsLeft > 0) {
+                    if(wdLeft <= 0) wdLeft += def.wd
                     wdLeft -= val
+                    mwDealt += val
                     if(wdLeft <= 0) {
                         modelsLeft--
-                        if(modelsLeft > 0) mwDealt += val
-                        else mwDealt += val + wdLeft
-                        wdLeft += def.wd
+                        if(modelsLeft <= 0)
+                            mwDealt += wdLeft
                     }
                 } else {
                     dmgLostOverkill += val
@@ -744,11 +399,11 @@ function calculate(atk, def, options) {
         results.modelsKilled.avg /= tests
         results.overkill.avg /= tests
 
-        var output = "stat\t|\taverage"
-            + "\nhit\t|\t" + results.hits.avg.toFixed(3)
-            + "\nwound\t|\t" + results.wounds.avg.toFixed(3)
+        var output = "stat\t\t|\taverage"
+            + "\nhit\t\t|\t" + results.hits.avg.toFixed(3)
+            + "\nwound\t\t|\t" + results.wounds.avg.toFixed(3)
             + "\nfailedSave\t|\t" + results.failedSaves.avg.toFixed(3)
-            + "\nmwDealt\t|\t" + results.mwDealt.avg.toFixed(3)
+            + "\nmwDealt\t\t|\t" + results.mwDealt.avg.toFixed(3)
             + "\ndmgDealt\t|\t" + results.dmgDealt.avg.toFixed(3)
             + "\nmodelsKilled\t|\t" + results.modelsKilled.avg.toFixed(3)
             + "\noverkill\t|\t" + results.overkill.avg.toFixed(3)
@@ -757,6 +412,289 @@ function calculate(atk, def, options) {
 
     }
 }
+function modVars() {
+    return {
+        "attackerTags" : [],
+        "defenderTags" : [],
+
+        "critWoundThresh" : 6,
+        "critHitThresh" : 6,
+
+        "hitMod" : 0,
+        "wdMod" : 0,
+        "svMod" : 0,
+
+        "apMod" : 0,
+
+        "hitrrMod" : 0,
+        "wdrrMod" : 0,
+
+        "autoHit" : false,
+
+        "extraHit" : false,
+        "lethalHit": false,
+        "devWound" : false,
+
+        "dmgMinus1": false,
+        "dmgHalf": false,
+
+        "damageMod" : 0,
+        "damageModScale" : 1,
+
+        "fishForCritHits" : false,
+        "fishForCritWounds" : false,
+    }
+}
+
+//-----------------------------------------------       onclicks       -----------------------------------------------
+function tableCalculate() {
+    var atkListElement = document.getElementById('list-test-atk')
+    var atkListItems = atkListElement.getElementsByTagName('li')
+    var atkList = Array.from(atkListItems)
+    atkList = atkList.map(item => JSON.parse(item.dataset.value))
+
+    var defListElement = document.getElementById('list-test-def')
+    var defListItems = defListElement.getElementsByTagName('li')
+    var defList = Array.from(defListItems)
+    defList = defList.map(item => JSON.parse(item.dataset.value))
+
+    var table = document.getElementById("output-table");
+    var columns = defList.length;
+    var rows = atkList.length;
+    var inner = "<tr><th></th>";
+    for(var i = 0; i < columns; i++) {
+        inner += "<th class='column-name'>" + defList[i].tag + "</th>"
+    }
+    inner += "</tr>";
+    var data = []
+    for(var i = 0; i < rows; i++) {
+        inner += "<tr><th class='row-name'>" + atkList[i].tag + "</th>"
+        for(var j = 0; j < columns; j++) {
+            inner += "<td>" + calculate(atkList[i], defList[j], {
+                "dmglabel": false,
+                "dmg": true,
+                "models": false,
+                "shotsToKill": false,
+                "breakdown": false,
+                "simulated": false
+            }) + "</td>";
+        }
+        inner += "</tr>"
+    }
+
+    table.innerHTML = inner;
+}
+function singleCalculate() {
+    var outputField = document.getElementById("output");
+    var atk = getAttacker()
+    var def = getDefender()
+    output = calculate(atk, def, outputOptions)
+    outputField.textContent += output + "\n\n"
+}
+function addModifier(type, modifier) {
+    if(modifier.length == 0) return;
+
+    selectedModifier = parseModifier(type, modifier, true);
+    if(!selectedModifier) return;
+
+    var modifierList = document.getElementById('list-' + type);
+    var listItem = document.createElement('li');
+    listItem.draggable = true
+    listItem.className = "modListItem";
+    listItem.setAttribute("data-value", JSON.stringify(selectedModifier));
+    
+    var textSpan = document.createElement('span');
+    textSpan.textContent = modifier;
+    listItem.appendChild(textSpan);
+
+    var button = document.createElement("button");
+    button.textContent = "Remove";
+    button.onclick = function() {removeListItem(button)};
+    listItem.appendChild(button);
+
+    modifierList.appendChild(listItem);
+
+    var inputField = document.getElementById(type)
+    focus(inputField)
+    inputField.value = ""
+}
+function removeListItem(button) {
+    button.parentNode.remove();
+}
+function clearOutput() {
+    var outputField = document.getElementById("output");
+    outputField.textContent = "";
+}
+
+//-----------------------------------------------     data parsing     -----------------------------------------------
+function parseDiceVariable(s) {
+    s = s.replace(/\s/g, "")
+    s = s.toLowerCase();
+    var current = 0;
+    var end = s.length;
+    var diceMultiplier = 1.0;
+    var diceSides = 0.0;
+    var value = 0.0;
+
+    function charIsInt(i) {
+        return (s.charAt(i) >= '0' && s.charAt(i) <= '9');
+    }
+
+    function ensureNextChar(c) {
+        if(s.charAt(current) != c || current == end)
+            throw new Error();
+        current++;
+    }
+    
+    function ensureAndPopNextInt() {
+        if(!charIsInt(current) || current == end)
+            throw new Error(); 
+        var i = current;
+        while (charIsInt(i)) i++;
+        var next = s.substring(current, i);
+        current = i;
+        return parseInt(next);
+    }
+
+    if(charIsInt(0)) {    
+        var temp = ensureAndPopNextInt();
+        if(current >= end) {
+            //temp is value and nothing else
+            value = temp;
+        } else {
+            //temp is multiplier followed by d then dice sides
+            diceMultiplier = temp;
+            ensureNextChar('d');        
+            diceSides = ensureAndPopNextInt();             
+            if(current < end) {      
+                //expect + followed by value
+                ensureNextChar('+');  
+                value = ensureAndPopNextInt();   
+                if(current != end) throw new Error();
+            } 
+        }
+    } else {
+        //expect d followed by dice sides
+        ensureNextChar('d');      
+        diceSides = ensureAndPopNextInt();
+        //if still parts remain, there should be + followed by value
+        if(current < end) {      
+            ensureNextChar('+');
+            value = ensureAndPopNextInt();
+            if(current != end) throw new Error();
+        } 
+    }
+
+    if(diceSides <= 0)
+        diceMultiplier = 0;
+
+    var avg = diceMultiplier * (diceSides + 1) / 2 + value;
+    var vals = {
+        "diceMulti": diceMultiplier,
+        "diceSides": diceSides,
+        "value": value,
+        "avg": avg,
+        "isVariable": diceMultiplier != 0
+    };
+    return vals;
+}
+function getValue(field) {
+
+    var errorIndicator = document.getElementById(field + "-error");
+    field = document.getElementById(field);
+
+    if(field.value.length == 0) {
+        errorIndicator.textContent = "";
+        return;
+    }
+
+    try {
+        var vals = parseDiceVariable(field.value);
+        vals = JSON.stringify(vals);
+        field.setAttribute("data-values", vals);
+        errorIndicator.textContent = "";
+    } catch(e) {
+        console.log(e);
+        errorIndicator.textContent = "*";
+    }
+}
+function testModifier(listType, testMod) {
+    var modifierList = document.getElementById('list-' + listType);
+    var listItems = modifierList.getElementsByTagName("li");
+    var modifiers = Array.from(listItems).map(
+        mod => JSON.parse(mod.dataset.value)
+    );
+    var modifierTypes = modifiers.map(
+        mod => mod.type
+    );
+    var modifierNames = modifiers.map(
+        mod => mod.name
+    );
+    if(modifierNames.includes(testMod.name)) return 1;
+    if(testMod.type == 'modifier' || testMod.type == 'tag') return 0;
+    if(modifierTypes.includes(testMod.type)) return 2;
+    return 0;
+}
+function parseModifier(type, modifier, check) {
+    var modifierData;
+    if(type == "modifier-attacker") modifierData = atkModifierData;
+    else if(type == "modifier-defender") modifierData = defModifierData;
+    var selectedModifier;
+    var modVariable;
+    for(var i = modifier.length; i > 0; i--) {
+        var chkStr = modifier.slice(0, i);
+        var matches = modifierData.filter(i => i.name == chkStr);
+        if(matches.length == 1) {
+            selectedModifier = matches[0];
+            if(check) {
+                var test = testModifier(type, selectedModifier);
+                if(test == 1) {
+                    alert("Modifier of name \"" + selectedModifier.name + "\" already in use");
+                    return;
+                } else if(test == 2) {
+                    alert("Modifier of type \"" + selectedModifier.type + "\" already in use");
+                    return;
+                }
+            }
+            if(i != modifier.length) {
+                modVariable = modifier.slice(i, modifier.length);
+                modVariable = modVariable.replace(" ", "");
+
+                if(modVariable == "" || modVariable == null) break;
+
+                if(!selectedModifier.var) {
+                    alert("Modifier \"" + selectedModifier.name + "\" Does not accept a variable");
+                    return;
+                }
+                
+                try {
+                    selectedModifier.value = modVariable;
+                } catch(e) {
+
+                    alert("Error parsing variable for modifier \"" + selectedModifier.name + "\" " + e);
+                    return;
+                }
+            } else if(selectedModifier.var == true) {
+                alert("Modifier \"" + selectedModifier.name + "\" needs a variable");
+                return;
+            }
+            break;
+        }
+    }
+    if(selectedModifier == null) {
+        alert("No modifier matches \"" + modifier + "\"");
+        return;
+    }
+    return selectedModifier
+}
+function getModifiers(type) {
+    var modifierList = document.getElementById('list-modifier-' + type);
+    var modifierItems = modifierList.getElementsByTagName('li');
+    var modifiers = Array.from(modifierItems);
+    return modifiers.map(item => JSON.parse(item.dataset.value));
+}
+
+//-----------------------------------------------     profile management     -----------------------------------------------
 function loadSelectedToAttacker() {
     if(!selectedProfile) {
         alert("No Profile Selected");
@@ -829,6 +767,154 @@ function loadSelectedToDefender() {
     nameField.textContent = unitName;
     
 }
+function loadGenericDefensiveLineup() {
+    unitList = []
+    unitData.forEach( faction => {
+        if(faction.faction == "Generic") {
+            faction.units.forEach(subset => {
+                if(subset.name = "Defensive Profiles") {
+                    subset.children.forEach( unit => {
+                        var defData = unit.data.defstats
+                        var parsedModList = []
+                        defData.mods.forEach(mod => {
+                            pm = parseModifier('modifier-defender', mod, false)
+                            parsedModList.push(pm)
+                        })
+                        defData.mods = parsedModList
+                        defData.tag = unit.name
+                        defData.fnp = parseInt(defData.fnp)
+                        defData.mortalFnp = defData.fnp
+                        defData.inv = parseInt(defData.inv)
+                        defData.models = parseInt(defData.models)
+                        defData.sv = parseInt(defData.sv)
+                        defData.tgh = parseInt(defData.tgh)
+                        defData.wd = parseInt(defData.wd)
+                        unitList.push(defData)
+                    })
+                }
+            })
+        }
+    })
+    var defenderList = document.getElementById('list-test-def');
+    unitList.forEach(profile => {
+        var listItem = document.createElement('li');
+        listItem.draggable = true;
+        listItem.className = "modListItem"
+
+        var textSpan = document.createElement('span');
+        textSpan.textContent = profile.tag
+        listItem.appendChild(textSpan);
+
+        var button = document.createElement("button");
+        button.textContent = "Remove";
+        button.onclick = function() {removeListItem(button)};
+        listItem.appendChild(button);
+
+        listItem.setAttribute("data-value", JSON.stringify(profile))
+
+        defenderList.appendChild(listItem);
+    })
+}
+function addAttackerToTable() {
+
+    var profile = getAttacker()
+
+    var attackerList = document.getElementById('list-test-atk');
+    var listItem = document.createElement('li');
+    listItem.draggable = true
+    listItem.className = "modListItem"
+
+    var textSpan = document.createElement('span');
+    var tagElement = document.getElementById('atk-group-input')
+    var tagName = tagElement.value;
+    if(tagName == "") tagName = profile.name
+    textSpan.textContent = tagName;
+    profile.tag = tagName
+    listItem.appendChild(textSpan);
+
+    var button = document.createElement("button");
+    button.textContent = "Remove";
+    button.onclick = function() {removeListItem(button)};
+    listItem.appendChild(button);
+
+    listItem.setAttribute("data-value", JSON.stringify(profile))
+
+    attackerList.appendChild(listItem);
+}
+function addDefenderToTable() {
+    var profile = getDefender()
+
+    var defenderList = document.getElementById('list-test-def');
+    var listItem = document.createElement('li');
+    listItem.draggable = true
+    listItem.className = "modListItem"
+
+    var textSpan = document.createElement('span');
+    var tagElement = document.getElementById('def-group-input')
+    var tagName = tagElement.value;
+    if(tagName == "") tagName = profile.name
+    textSpan.textContent = tagName;
+    profile.tag = tagName
+    listItem.appendChild(textSpan);
+
+    var button = document.createElement("button");
+    button.textContent = "Remove";
+    button.onclick = function() {removeListItem(button)};
+    listItem.appendChild(button);
+
+    listItem.setAttribute("data-value", JSON.stringify(profile))
+
+    defenderList.appendChild(listItem);
+}
+function getAttacker() {
+    var obj = {}
+
+    obj.mods = getModifiers("attacker")
+
+    var nameField = document.getElementById("header-attacker-profile");
+    obj.name = nameField.textContent
+
+    obj.count = parseInt(document.getElementById("count").value);
+    obj.bs = parseInt(document.getElementById("skill").value)
+    obj.str = parseInt(document.getElementById("strength").value)
+    obj.ap = parseInt(document.getElementById("ap").value)
+    
+    //attacks
+    obj.atk = {}
+    var atk_vals = document.getElementById("attacks").dataset.values;
+    obj.atk = JSON.parse(atk_vals);
+
+    //damage
+    obj.dmg = {}
+    var dmg_vals = document.getElementById("damage").dataset.values;
+    obj.dmg = JSON.parse(dmg_vals);
+
+    return obj
+}
+function getDefender() {
+    var obj = {}
+
+    obj.mods = getModifiers("defender")
+
+    //target stats
+    var nameField = document.getElementById("header-defender-name");
+    obj.name = nameField.textContent
+    obj.tgh = parseInt(document.getElementById("toughness").value);
+    obj.wd = parseInt(document.getElementById("wounds").value);
+    obj.sv = parseInt(document.getElementById("save").value);
+    obj.models = parseInt(document.getElementById("models").value);
+    obj.inv = parseInt(document.getElementById("invuln").value);
+    obj.fnp = parseInt(document.getElementById("feel-no-pain").value);
+    obj.mortalFnp = obj.fnp;
+
+    return obj
+}
+function clearModifiers(type) {
+    var list = document.getElementById('list-modifier-' + type);
+    list.innerHTML = "";
+}
+
+//-----------------------------------------------     Initialization     -----------------------------------------------
 function modifierInit(modifierData) {
     atkModifierData = modifierData[0].data;
     atkModifierData.sort((a, b) => {
@@ -872,53 +958,6 @@ function modifierInit(modifierData) {
         optionElement.setAttribute("data-value", JSON.stringify(defModifierData[i]));
         defModList.appendChild(optionElement);
     }
-}
-function loadGenericDefensiveLineup() {
-    unitList = []
-    unitData.forEach( faction => {
-        if(faction.faction == "Generic") {
-            faction.units.forEach(subset => {
-                if(subset.name = "Defensive Profiles") {
-                    subset.children.forEach( unit => {
-                        var defData = unit.data.defstats
-                        var parsedModList = []
-                        defData.mods.forEach(mod => {
-                            pm = parseModifier('modifier-defender', mod, false)
-                            parsedModList.push(pm)
-                        })
-                        defData.mods = parsedModList
-                        defData.tag = unit.name
-                        defData.fnp = parseInt(defData.fnp)
-                        defData.mortalFnp = defData.fnp
-                        defData.inv = parseInt(defData.inv)
-                        defData.models = parseInt(defData.models)
-                        defData.sv = parseInt(defData.sv)
-                        defData.tgh = parseInt(defData.tgh)
-                        defData.wd = parseInt(defData.wd)
-                        unitList.push(defData)
-                    })
-                }
-            })
-        }
-    })
-    var defenderList = document.getElementById('list-test-def');
-    unitList.forEach(profile => {
-        var listItem = document.createElement('li');
-        listItem.className = "modListItem"
-
-        var textSpan = document.createElement('span');
-        textSpan.textContent = profile.tag
-        listItem.appendChild(textSpan);
-
-        var button = document.createElement("button");
-        button.textContent = "Remove";
-        button.onclick = function() {removeListItem(button)};
-        listItem.appendChild(button);
-
-        listItem.setAttribute("data-value", JSON.stringify(profile))
-
-        defenderList.appendChild(listItem);
-    })
 }
 function unitsInit(statData) {
     unitData = statData;
@@ -1022,6 +1061,27 @@ function createNestedList(data, layer, colorOffset) {
 
     return list;
 }
+function generateEmptyTable() {
+    var table = document.getElementById("output-table");
+    var columns = 9;
+    var rows = 8;
+    var inner = "<tr><th></th>";
+    for(var i = 1; i <= columns; i++) {
+        inner += "<th class='column-name'>Defender " + i + "</th>"
+    }
+    inner += "</tr>";
+    
+    for(var i = 1; i < rows; i++) {
+        inner += "<tr><th class='row-name'>Attacker " + i + "</th>"
+        for(var j = 1; j <= columns; j++) {
+            inner += "<td></td>";
+        }
+        inner += "</tr>"
+    }
+
+
+    table.innerHTML = inner;
+}
 function init() {
     fetch('modifiers.json')
     .then(response => response.json())
@@ -1029,12 +1089,14 @@ function init() {
     .catch(error => {
         console.error('Error loading JSON file:', error);
     });
+
     fetch('output.json')
     .then(response => response.json())
     .then(data => unitsInit(data))
     .catch(error => {
         console.error('Error loading JSON file:', error);
     });
+
     getValue('damage');
     getValue('attacks');
 
@@ -1052,39 +1114,52 @@ function init() {
         }
     });
 
+    var lists = []
+    lists.push(document.getElementById("list-modifier-attacker"))
+    lists.push(document.getElementById("list-modifier-defender"))
+    lists.push(document.getElementById('list-test-atk'))
+    lists.push(document.getElementById('list-test-def'))
+    lists.forEach(list => {
+        list.addEventListener("dragstart", (event) => {
+            draggedItem = event.target
+        })
+        list.addEventListener("dragover", (event) => {
+            event.preventDefault()
+            var currentDraggedOverItem = event.target.closest("li")
+            if (currentDraggedOverItem) {
+                list.insertBefore(draggedItem, currentDraggedOverItem)
+            } else {
+            list.appendChild(draggedItem)
+            }
+        })
+        list.addEventListener("dragend", (event) => {
+            draggedItem = null
+        })
+    })
+
+    var modifierAtkInput = document.getElementById("modifier-attacker")
+    modifierAtkInput.addEventListener("keyup", (event => {
+        if(event.key === "Enter") {
+            event.preventDefault()
+            focus(event.target)
+            addModifier('modifier-attacker', modifierAtkInput.value)
+        }
+    }))
+
+    var modifierDefInput = document.getElementById("modifier-defender")
+    modifierAtkInput.addEventListener("keyup", (event => {
+        if(event.key === "Enter") {
+            event.preventDefault()
+            focus(event.target)
+            addModifier('modifier-defender', modifierDefInput.value)
+        }
+    }))
+
+    var simChkBox = document.getElementById("chk-sim")
+    simChkBox.addEventListener("change", (event) => {
+        outputOptions.simulated = event.target.checked
+    })
+
     generateEmptyTable();
-}
-function modVars() {
-    return {
-        "attackerTags" : [],
-        "defenderTags" : [],
-
-        "critWoundThresh" : 6,
-        "critHitThresh" : 6,
-
-        "hitMod" : 0,
-        "wdMod" : 0,
-        "svMod" : 0,
-
-        "apMod" : 0,
-
-        "hitrrMod" : 0,
-        "wdrrMod" : 0,
-
-        "autoHit" : false,
-
-        "extraHit" : false,
-        "lethalHit": false,
-        "devWound" : false,
-
-        "dmgMinus1": false,
-        "dmgHalf": false,
-
-        "damageMod" : 0,
-        "damageModScale" : 1,
-
-        "fishForCritHits" : false,
-        "fishForCritWounds" : false,
-    }
 }
 window.addEventListener('DOMContentLoaded', init);

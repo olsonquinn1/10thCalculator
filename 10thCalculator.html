@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>10th Edition Calculator</title>
   <link rel="stylesheet" type="text/css" href="css/style.css">
@@ -13,6 +13,10 @@
             <div class ="unit-select-btns-container">
                 <button onclick="loadSelectedToAttacker()">Load as Attacker</button>
                 <button onclick="loadSelectedToDefender()">Load as Defender</button>
+            </div>
+            <div class="form-row">
+                <label>Simulated</label>
+                <input id="chk-sim" type="checkbox">
             </div>
         </div>
         <div class="sub-container">
@@ -145,7 +149,7 @@
             <div>
                 <div class="container-2">
                     <h2>Attacking Profiles</h2>
-                    <button class="add-generic">Add Generic Profiles</button>
+                    <button class="add-generic" style="visibility: hidden;">Add Generic Profiles</button>
                 </div>
                 
                 <ul id="list-test-atk" class="modifier-list"></ul>

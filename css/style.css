@@ -9,6 +9,26 @@ ul {
 li {
     margin-left: 10px; /* Adjust the value as needed */
 }
+
+input[type="checkbox"] {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-color: #f2f2f2;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+}
+input[type="checkbox"]::after {
+    content: "\2713";
+    font-size: 18px;
+    position: absolute;
+    top: 3px;
+    left: 7px;
+    color: #fff;
+    opacity: 0;
+}
 /*Modifier Input*/
 .modifier-input {
     display: flex;
@@ -130,6 +150,14 @@ li {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
+    cursor: move;
+    padding: 10px;
+    border: 1px solid #6c6c6c;
+    border-radius: 10px;
+    background-color: #cacaca;
+}
+.modifier-list .modListItem:hover {
+    background-color: #fdfdb1;
 }
 
 .modifier-list .modListItem button {
@@ -223,12 +251,11 @@ li {
 .unit-select-btns-container {
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 15px;
 }
 
 .unit-select-btns-container button {
-    padding: 5px 10px;
-    margin-left: 10px;
     height: 40px;
     width: 175px;
     border: none;
