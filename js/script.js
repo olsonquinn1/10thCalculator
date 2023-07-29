@@ -15,6 +15,66 @@ var outputOptions = {
     "simulated": false
 }
 
+//probability simulation testing
+function testDevFish() {
+    //dw normal, dw with rr, dw with rr + fish for crit
+    var px = 1/3
+    var py = 1/6
+    var sv = 1/2
+    var hit = 1/2
+    var pxy = px + py
+    var sum = 0;
+    var tests = 10000000
+
+    for(var i = 0; i < tests; i++) {
+        if(roll(hit) && roll(pxy) && roll(sv)) sum++
+    }
+    var avgNone = sum / tests
+
+    sum = 0
+    for(var i = 0; i < tests; i++) {
+        if(roll(hit)) {
+            var res = mutexProb(px, py)
+            if(res[0] && roll(sv)) sum++
+            else if(res[1]) sum++ 
+        }
+    }
+    var avgNorm = sum / tests
+
+    sum = 0;
+    for(var i = 0; i < tests; i++) {
+        if(roll(hit)) {
+            var res = mutexProb(px, py)
+            if(res[0] && roll(sv)) sum++
+            else if(res[1]) sum++ 
+            else {
+                res = mutexProb(px, py)
+                if(res[0] && roll(sv)) sum++
+                else if(res[1]) sum++ 
+            }
+        }
+    }
+    var avgNoFish = sum / tests
+
+    sum = 0;
+    for(var i = 0; i < tests; i++) {
+        if(roll(hit)) {
+            if(!roll(py)) {
+                var res = mutexProb(px, py)
+                if(res[0] && roll(sv)) sum++
+                if(res[1]) sum++
+            } else 
+                sum++
+        }
+    }
+    var avgFish = sum / tests
+
+    console.log("none",avgNone)
+    console.log("normal",avgNorm)
+    console.log("without fish",avgNoFish)
+    console.log("fish",avgFish)
+}
+
 //-----------------------------------------------   Probability Util   -----------------------------------------------
 //returns probabilty of threshold success on dice roll
 function thresh(i) {
@@ -41,14 +101,14 @@ function multiRoll(probability, count) {
     return success
 }
 //three outcome roll (assumes a and b are mutex and sum <= 1)
-function threshProb(a, b) {
+function mutexProb(a, b) {
     var roll = Math.random()
     return [roll <= a, roll <= (b + a) && roll > a]
 } 
-function multiThreshProb(a, b, count) {
+function multiMutexProb(a, b, count) {
     var results = [0, 0]
     for(var i = 0; i < count; i++) {
-        res = threshProb(a, b)
+        res = mutexProb(a, b)
         if(res[0]) results[0]++
         if(res[1]) results[1]++
     }
@@ -62,20 +122,22 @@ function calculateReroll(normThresh, critThresh, rrMod, fishForCrit) {
     //reroll 1:   rrMod = attacks
     var px = thresh(normThresh);
     var py = thresh(critThresh);
-    if(rrMod == 0) {
-        return [Math.max(px - py, 0), py];
-    } else {
-        var pxrr = px / rrMod;
-        var pyrr = py / rrMod;
-    }
+    px = Math.max(px - py, 0)
     var newProbs = [px, py];
+    if(rrMod == 0) {
+        return newProbs;
+    }
+    var pxrr = px / rrMod;
+    var pyrr = py / rrMod;
+    
+    var pxy = px + py;
     if(fishForCrit) {
         //px = rr succ x * failed prob of y - rr fail x * rerolls unecessary for x succ
-        newProbs[0] += pxrr * (1 - py) - (1 - pxrr) * (px - py);
+        newProbs[0] += pxrr * (1 - pxy) - (1 - pxrr) * (1 - px);
         newProbs[1] += pyrr * (1 - py);
     } else {
-        newProbs[0] += pxrr * (1 - px);
-        newProbs[1] += pyrr * (1 - px);
+        newProbs[0] += pxrr * (1 - pxy);
+        newProbs[1] += pyrr * (1 - pxy);
     }
     return [newProbs[0] - newProbs[1], newProbs[1]];
 }
@@ -296,7 +358,7 @@ function calculate(atk, def, options) {
             var wdRes = 0
 
             //roll hits
-            var hits = multiThreshProb(hit, critHit, attacks)
+            var hits = multiMutexProb(hit, critHit, attacks)
             hitRes += hits[0]
             if(modVar.lethalHit) wdRes += hits[1]
             else hitRes += hits[1]
@@ -306,7 +368,7 @@ function calculate(atk, def, options) {
 
             //roll wounds
             var devWds = 0
-            var wounds = multiThreshProb(wound, critWd, hitRes)
+            var wounds = multiMutexProb(wound, critWd, hitRes)
             wdRes += wounds[0]
             if(modVar.devWound) devWds += wounds[1]
             else wdRes += wounds[1]
@@ -1163,3 +1225,4 @@ function init() {
     generateEmptyTable();
 }
 window.addEventListener('DOMContentLoaded', init);
+testDevFish()
